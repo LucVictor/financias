@@ -25,6 +25,7 @@ from .models import (
     RecebimentoPeriodico,
 )
 from .services import (
+    garantir_ocorrencias_mes,
     gerar_ocorrencias_conta_periodica,
     gerar_ocorrencias_recebimento_periodico,
     processar_ciclos,
@@ -35,6 +36,7 @@ def _contexto_fluxo(ano=None, mes=None):
     hoje = timezone.localdate()
     ano = int(ano or hoje.year)
     mes = int(mes or hoje.month)
+    garantir_ocorrencias_mes(ano, mes)
     projecao = projecao_fluxo_caixa(mes, ano)
 
     ocorrencias_pagar = (
@@ -84,8 +86,6 @@ def _contexto_fluxo(ano=None, mes=None):
         'avulsos': avulsos,
         'faturas_projecao': faturas_projecao,
         'parcelas_dividas': parcelas_dividas,
-        'contas_periodicas': ContaPeriodica.objects.filter(ativo=True),
-        'recebimentos_periodicos': RecebimentoPeriodico.objects.filter(ativo=True),
     }
 
 
@@ -113,6 +113,15 @@ def home(request):
     contexto['layout'] = layout
     contexto['layout_labels'] = LAYOUT_LABELS
     return render(request, LAYOUTS[layout], contexto)
+
+
+@login_required
+def cadastros(request):
+    """Seção dedicada às contas e recebimentos periódicos cadastrados."""
+    return render(request, 'contas_periodicas/fluxo_cadastros.html', {
+        'contas_periodicas': ContaPeriodica.objects.order_by('descricao'),
+        'recebimentos_periodicos': RecebimentoPeriodico.objects.order_by('descricao'),
+    })
 
 
 # ===== Contas periódicas (a pagar) =====

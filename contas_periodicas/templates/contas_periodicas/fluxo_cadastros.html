@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Cadastros — Contas e Recebimentos Periódicos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-gear"></i> Contas e Recebimentos Periódicos</h4>
+    <div>
+        <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-outline-danger btn-sm">+ Conta periódica</a>
+        <a href="{% url 'contas_periodicas:novo_recebimento' %}" class="btn btn-outline-success btn-sm">+ Recebimento periódico</a>
+        <a href="{% url 'contas_periodicas:home' %}" class="btn btn-outline-secondary btn-sm">Voltar ao fluxo</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="bi bi-arrow-up-right"></i> Contas periódicas ({{ contas_periodicas|length }})
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Recorrência</th>
+                            <th>Dia</th>
+                            <th>Valor</th>
+                            <th>Paga via</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in contas_periodicas %}
+                        <tr class="{% if not c.ativo %}table-secondary{% endif %}">
+                            <td>
+                                {{ c.descricao }}
+                                {% if not c.ativo %}<span class="badge bg-secondary">inativa</span>{% endif %}
+                            </td>
+                            <td>{{ c.get_recorrência_display }}</td>
+                            <td>{{ c.dia_do_mes }}</td>
+                            <td>R$ {{ c.valor_esperado }}</td>
+                            <td>
+                                {% if c.cartao_pagamento_padrao %}
+                                    <span class="badge bg-light text-dark border">Cartão {{ c.cartao_pagamento_padrao.nome }}</span>
+                                {% elif c.conta_pagamento_padrao %}
+                                    <span class="badge bg-light text-dark border">Conta {{ c.conta_pagamento_padrao.nome }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'contas_periodicas:editar_conta' c.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                                <a href="{% url 'contas_periodicas:excluir_conta' c.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted">Nenhuma conta periódica cadastrada.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-arrow-down-left"></i> Recebimentos periódicos ({{ recebimentos_periodicos|length }})
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Recorrência</th>
+                            <th>Dia</th>
+                            <th>Valor</th>
+                            <th>Recebe em</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recebimentos_periodicos %}
+                        <tr class="{% if not r.ativo %}table-secondary{% endif %}">
+                            <td>
+                                {{ r.descricao }}
+                                {% if not r.ativo %}<span class="badge bg-secondary">inativo</span>{% endif %}
+                            </td>
+                            <td>{{ r.get_recorrência_display }}</td>
+                            <td>{{ r.dia_do_mes }}</td>
+                            <td>R$ {{ r.valor_esperado }}</td>
+                            <td>
+                                {% if r.conta_destino_padrao %}
+                                    <span class="badge bg-light text-dark border">{{ r.conta_destino_padrao.nome }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'contas_periodicas:editar_recebimento' r.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                                <a href="{% url 'contas_periodicas:excluir_recebimento' r.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center text-muted">Nenhum recebimento periódico cadastrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

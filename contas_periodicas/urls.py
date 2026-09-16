@@ -6,6 +6,7 @@ app_name = 'contas_periodicas'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('cadastros/', views.cadastros, name='cadastros'),
     path('contas/nova/', views.nova_conta, name='nova_conta'),
     path('contas/<int:pk>/editar/', views.editar_conta, name='editar_conta'),
     path('contas/<int:pk>/excluir/', views.excluir_conta, name='excluir_conta'),

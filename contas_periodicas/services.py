@@ -46,6 +46,43 @@ def gerar_ocorrencias_conta_periodica(conta: ContaPeriodica, ate: date | None = 
         origem = _avancar_recorrencia(conta.recorrência, origem)
 
 
+def garantir_ocorrencias_conta_no_mes(conta: ContaPeriodica, ano: int, mes: int):
+    """Garante as ocorrências de uma conta periódica rodando dentro de um mês específico."""
+    inicio = date(ano, mes, 1)
+    fim = date(ano, mes, _ultimo_dia(ano, mes))
+    origem = conta._proxima_data(conta.dia_do_mes, base=inicio)
+    while origem <= fim:
+        OcorrenciaContaPeriodica.objects.get_or_create(
+            conta_periodica=conta,
+            data_vencimento=origem,
+            defaults={'valor': conta.valor_esperado},
+        )
+        origem = _avancar_recorrencia(conta.recorrência, origem)
+
+
+def garantir_ocorrencias_recebimento_no_mes(recebimento: RecebimentoPeriodico, ano: int, mes: int):
+    """Garante as ocorrências de um recebimento periódico rodando dentro de um mês específico."""
+    inicio = date(ano, mes, 1)
+    fim = date(ano, mes, _ultimo_dia(ano, mes))
+    origem = recebimento._proxima_data(recebimento.dia_do_mes, base=inicio)
+    while origem <= fim:
+        OcorrenciaRecebimento.objects.get_or_create(
+            recebimento_periodico=recebimento,
+            data_prevista=origem,
+            defaults={'valor': recebimento.valor_esperado},
+        )
+        origem = _avancar_recorrencia(recebimento.recorrência, origem)
+
+
+def garantir_ocorrencias_mes(ano: int, mes: int):
+    """Garante ocorrências de todas as contas/recebimentos ativos para um mês consultado
+    (cobre meses fora do horizonte de geração automática, ex.: dezembro daqui a 3+ meses)."""
+    for conta in ContaPeriodica.objects.filter(ativo=True):
+        garantir_ocorrencias_conta_no_mes(conta, ano, mes)
+    for recebimento in RecebimentoPeriodico.objects.filter(ativo=True):
+        garantir_ocorrencias_recebimento_no_mes(recebimento, ano, mes)
+
+
 def gerar_todas_ocorrencias_contas():
     for conta in ContaPeriodica.objects.filter(ativo=True):
         gerar_ocorrencias_conta_periodica(conta)
