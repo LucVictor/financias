@@ -20,7 +20,8 @@ RUN pip install -r requirements.txt \
 
 COPY . .
 
-RUN mkdir -p /app/static /app/staticfiles
+RUN chmod +x /app/docker-entrypoint.sh \
+    && mkdir -p /app/static /app/staticfiles
 
 EXPOSE 8000
 
