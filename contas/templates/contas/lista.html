@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Contas Bancárias{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-bank"></i> Contas Bancárias</h4>
+    <div>
+        <a href="{% url 'contas:novo' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nova conta</a>
+        <a href="{% url 'contas:nova_movimentacao_sem_conta' %}" class="btn btn-outline-primary btn-sm">Registrar movimentação</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="small">Total em contas</div>
+                <h3 class="mb-0">R$ {{ total_geral|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for banco in bancos %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6 class="card-title mb-1">{{ banco.nome }}</h6>
+                    <span class="badge bg-secondary">{{ banco.get_tipo_conta_display }}</span>
+                </div>
+                <p class="text-muted small mb-2">{{ banco.observacoes }}</p>
+                <h5 class="mb-3 {% if banco.saldo_atual >= 0 %}valor-pos{% else %}valor-neg{% endif %}">
+                    R$ {{ banco.saldo_atual }}
+                </h5>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'contas:detalhe' banco.pk %}" class="btn btn-outline-primary">Extrato</a>
+                    <a href="{% url 'contas:nova_movimentacao' banco.pk %}" class="btn btn-outline-success">Movimentar</a>
+                    <a href="{% url 'contas:editar' banco.pk %}" class="btn btn-outline-secondary">Editar</a>
+                    <a href="{% url 'contas:excluir' banco.pk %}" class="btn btn-outline-danger">Excluir</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">Nenhuma conta cadastrada. <a href="{% url 'contas:novo' %}">Cadastre a primeira.</a></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

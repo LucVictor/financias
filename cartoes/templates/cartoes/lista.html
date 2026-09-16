@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Cartões de Crédito{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-credit-card"></i> Cartões de Crédito</h4>
+    <div>
+        <a href="{% url 'cartoes:novo' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo cartão</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="small">Total de limites</div>
+                <h3 class="mb-0">R$ {{ total_limites|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="small">Total em aberto (fatura atual)</div>
+                <h3 class="mb-0">R$ {{ total_devedor|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for c in cartoes %}
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h6 class="card-title mb-1">{{ c.nome }}</h6>
+                    <span class="badge bg-secondary">{{ c.banco_emissor }}</span>
+                </div>
+                <p class="text-muted small">
+                    Fechamento: dia {{ c.dia_fechamento }} &middot; Vencimento: dia {{ c.dia_vencimento }}
+                </p>
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <div class="small text-muted">Limite disponível</div>
+                        <strong class="valor-pos">R$ {{ c.limite_disponivel|floatformat:2 }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">Limite total</div>
+                        <span>R$ {{ c.limite_total }}</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="small text-muted">Fatura atual (em aberto)</div>
+                    <strong class="valor-neg">R$ {{ c.saldo_devedor_fatura_atual|floatformat:2 }}</strong>
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'cartoes:detalhe' c.pk %}" class="btn btn-outline-primary">Faturas</a>
+                    <a href="{% url 'cartoes:nova_compra' c.pk %}" class="btn btn-outline-success">Comprar</a>
+                    <a href="{% url 'cartoes:editar' c.pk %}" class="btn btn-outline-secondary">Editar</a>
+                    <a href="{% url 'cartoes:excluir' c.pk %}" class="btn btn-outline-danger">Excluir</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">Nenhum cartão cadastrado. <a href="{% url 'cartoes:novo' %}">Cadastre o primeiro.</a></div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

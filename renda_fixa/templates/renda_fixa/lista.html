@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Renda Fixa (CDB){% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-building"></i> Renda Fixa — CDB</h4>
+    <div>
+        <a href="{% url 'renda_fixa:nova_taxa' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-percent"></i> Registrar CDI</a>
+        <a href="{% url 'renda_fixa:nova' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nova aplicação</a>
+    </div>
+</div>
+
+<div class="alert alert-light border">
+    <strong>Taxa CDI vigente:</strong> {{ cdi }}% a.a.
+    <span class="text-muted small">(atualize manualmente em "Registrar CDI")</span>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body"><div class="small">Investido</div><h3 class="mb-0">R$ {{ total_investido|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body"><div class="small">Valor bruto atual</div><h3 class="mb-0">R$ {{ total_bruto|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body"><div class="small">Valor líquido atual</div><h3 class="mb-0">R$ {{ total_liquido|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Instituição</th><th>% CDI</th><th>Investido</th>
+                    <th>Bruto atual</th><th>Líquido atual</th><th>Vencimento</th>
+                    <th>Projeção bruta</th><th>Projeção líquida</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in aplicacoes %}
+                <tr>
+                    <td><strong>{{ item.aplicacao.instituicao }}</strong>
+                        <br><small class="text-muted">Aplic: {{ item.aplicacao.data_aplicacao|date:'d/m/Y' }}</small>
+                    </td>
+                    <td>{{ item.aplicacao.percentual_cdi }}%</td>
+                    <td>R$ {{ item.aplicacao.valor_aplicado }}</td>
+                    <td class="valor-pos">R$ {{ item.atual.valor_bruto }}</td>
+                    <td class="valor-pos">R$ {{ item.atual.valor_liquido }}
+                        <br><small class="text-muted">IR: R$ {{ item.atual.ir }}</small>
+                    </td>
+                    <td>{{ item.aplicacao.data_vencimento|date:'d/m/Y' }}
+                        <br><small class="text-muted">{{ item.atual.dias_uteis }} dias úteis</small>
+                    </td>
+                    <td class="valor-pos">R$ {{ item.projecao.valor_bruto }}</td>
+                    <td class="valor-pos">R$ {{ item.projecao.valor_liquido }}</td>
+                    <td>
+                        <a href="{% url 'renda_fixa:editar' item.aplicacao.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        <a href="{% url 'renda_fixa:excluir' item.aplicacao.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">Nenhuma aplicação de CDB cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h5 class="mt-4">Últimas taxas CDI registradas</h5>
+<ul class="list-group">
+    {% for t in taxas %}
+    <li class="list-group-item d-flex justify-content-between">
+        <span>{{ t.valor_anual }}% a.a.</span>
+        <span class="text-muted">desde {{ t.data_inicio|date:'d/m/Y' }}</span>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted">Nenhuma taxa registrada. Use "Registrar CDI".</li>
+    {% endfor %}
+</ul>
+{% endblock %}

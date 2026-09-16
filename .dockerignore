@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+db.sqlite3
+.env
+.venv/
+staticfiles/
+server_out.log
+server_err.log
+.git/
+.gitignore
+*.md
+.env.example

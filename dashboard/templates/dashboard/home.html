@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Finanças Pessoais{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="small">Patrimônio total (ativos)</div>
+                <h3 class="mb-0">R$ {{ total_ativos|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="small">Passivos (dívidas + faturas)</div>
+                <h3 class="mb-0">R$ {{ total_passivos|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="small">Saldo líquido</div>
+                <h3 class="mb-0">R$ {{ saldo_liquido|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if fluxo_caixa.saldo_projetado >= 0 %}bg-info{% else %}bg-warning{% endif %}">
+            <div class="card-body">
+                <div class="small">Fluxo de caixa do mês</div>
+                <h3 class="mb-0">R$ {{ fluxo_caixa.saldo_projetado|floatformat:2 }}</h3>
+                <small class="text-white">A pagar: R$ {{ fluxo_caixa.a_pagar|floatformat:2 }} · A receber: R$ {{ fluxo_caixa.a_receber|floatformat:2 }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Contas bancárias</div>
+            <div class="card-body text-center"><h4 class="valor-pos">R$ {{ total_contas|floatformat:2 }}</h4></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Poupança</div>
+            <div class="card-body text-center"><h4 class="valor-pos">R$ {{ total_poupanca|floatformat:2 }}</h4></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-dark text-white">CDB / Renda fixa (bruto)</div>
+            <div class="card-body text-center"><h4 class="valor-pos">R$ {{ total_cdbs|floatformat:2 }}</h4></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Renda variável</div>
+            <div class="card-body text-center"><h4 class="valor-pos">R$ {{ total_renda_variavel|floatformat:2 }}</h4></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-dark text-white">Criptomoedas</div>
+            <div class="card-body text-center"><h4 class="valor-pos">R$ {{ total_cripto|floatformat:2 }}</h4></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">Evolução patrimonial (últimos 180 dias)</div>
+            <div class="card-body">
+                <canvas id="graficoEvolucao" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">Composição dos ativos</div>
+            <div class="card-body">
+                <canvas id="graficoComposicao" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const dados = {
+    datas: {{ evolucao.datas|safe }},
+    ativos: {{ evolucao.ativos_totais|safe }},
+    passivos: {{ evolucao.passivos|safe }},
+    liquido: {{ evolucao.patrimonio_liquido|safe }},
+    composicao: {
+        labels: {{ composicao_labels|safe }},
+        valores: {{ composicao_valores|safe }}
+    }
+};
+
+new Chart(document.getElementById('graficoEvolucao'), {
+    type: 'line',
+    data: {
+        labels: dados.datas,
+        datasets: [
+            { label: 'Ativos', data: dados.ativos, borderColor: '#0d6efd', fill: false },
+            { label: 'Passivos', data: dados.passivos, borderColor: '#dc3545', fill: false },
+            { label: 'Patrimônio líquido', data: dados.liquido, borderColor: '#198754', fill: false }
+        ]
+    },
+    options: { responsive: true, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: R$ ${Number(ctx.raw).toFixed(2)}` } } } }
+});
+
+new Chart(document.getElementById('graficoComposicao'), {
+    type: 'doughnut',
+    data: {
+        labels: dados.composicao.labels,
+        datasets: [{ data: dados.composicao.valores }]
+    },
+    options: { responsive: true, plugins: { tooltip: { callbacks: { label: ctx => `${ctx.label}: R$ ${Number(ctx.raw).toFixed(2)}` } } } }
+});
+</script>
+{% endblock %}

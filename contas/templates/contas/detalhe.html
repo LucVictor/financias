@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}{{ banco.nome }} — Extrato{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-book"></i> {{ banco.nome }} — Extrato</h4>
+    <div>
+        <a href="{% url 'contas:nova_movimentacao' banco.pk %}" class="btn btn-success btn-sm">Nova movimentação</a>
+        <a href="{% url 'contas:editar' banco.pk %}" class="btn btn-outline-secondary btn-sm">Editar conta</a>
+        <a href="{% url 'contas:lista' %}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="small text-muted">Saldo atual</div>
+                <h5 class="mb-0 {% if banco.saldo_atual >= 0 %}valor-pos{% else %}valor-neg{% endif %}">
+                    R$ {{ banco.saldo_atual }}
+                </h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="small text-muted">Entradas no período</div>
+                <h5 class="mb-0 valor-pos">R$ {{ totais_entrada }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="small text-muted">Saídas no período</div>
+                <h5 class="mb-0 valor-neg">R$ {{ totais_saida }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="small text-muted">Saldo do período</div>
+                <h5 class="mb-0 {% if saldo_periodo >= 0 %}valor-pos{% else %}valor-neg{% endif %}">
+                    R$ {{ saldo_periodo }}
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="mes" class="form-select form-select-sm">
+            <option value="">Ano inteiro</option>
+            {% for p in periodos %}
+            <option value="{{ p.value }}" {% if mes == p.value %}selected{% endif %}>{{ p.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="ano" class="form-select form-select-sm">
+            {% for a in anos %}
+            <option value="{{ a }}" {% if ano == a|stringformat:'s' %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-sm btn-outline-primary">Filtrar</button>
+    </div>
+</form>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-end">Valor</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimentacoes %}
+                <tr>
+                    <td>{{ m.data|date:'d/m/Y' }}</td>
+                    <td>{{ m.descricao }}</td>
+                    <td>{{ m.categoria|default:'—' }}</td>
+                    <td>
+                        <span class="badge {% if m.tipo == 'entrada' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ m.get_tipo_display }}
+                        </span>
+                    </td>
+                    <td class="text-end {% if m.tipo == 'entrada' %}valor-pos{% else %}valor-neg{% endif %}">
+                        R$ {{ m.valor }}
+                    </td>
+                    <td>
+                        <a href="{% url 'contas:editar_movimentacao' m.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        <a href="{% url 'contas:excluir_movimentacao' m.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Nenhuma movimentação no período.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Renda Variável{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-graph-up"></i> Ativos (Renda Variável)</h4>
+    <div>
+        <a href="{% url 'renda_variavel:novo_provento_sem_ativo' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-coin"></i> Registrar provento</a>
+        <a href="{% url 'renda_variavel:novo' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Novo ativo</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body"><div class="small">Valor de mercado</div><h3 class="mb-0">R$ {{ total_mercado|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info">
+            <div class="card-body"><div class="small">Proventos mensais estimados</div><h3 class="mb-0">R$ {{ total_proventos_mensais|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Ticker</th><th>Tipo</th><th>Qtd</th><th>Preço médio</th><th>Preço atual</th>
+                    <th>Valor de mercado</th><th>DY mensal</th><th>Proventos/mês</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in ativos %}
+                <tr>
+                    <td><strong>{{ a.ticker }}</strong></td>
+                    <td>{{ a.get_tipo_display }}</td>
+                    <td>{{ a.quantidade }}</td>
+                    <td>R$ {{ a.preco_medio }}</td>
+                    <td>R$ {{ a.preco_atual }}</td>
+                    <td class="valor-pos">R$ {{ a.valor_mercado|floatformat:2 }}</td>
+                    <td>{{ a.dividend_yield_mensal }}%</td>
+                    <td class="valor-pos">R$ {{ a.proventos_mensais_estimados|floatformat:2 }}</td>
+                    <td>
+                        <a href="{% url 'renda_variavel:novo_provento' a.pk %}" class="btn btn-sm btn-outline-success">Provento</a>
+                        <a href="{% url 'renda_variavel:editar' a.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        <a href="{% url 'renda_variavel:excluir' a.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">Nenhum ativo cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<h5 class="mt-4">Proventos recebidos ({{ 'now'|date:'Y' }})</h5>
+<table class="table table-sm table-striped">
+    <thead>
+        <tr><th>Data</th><th>Ativo</th><th>Tipo</th><th class="text-end">Valor</th></tr>
+    </thead>
+    <tbody>
+        {% for p in proventos_recebidos %}
+        <tr>
+            <td>{{ p.data|date:'d/m/Y' }}</td>
+            <td>{{ p.ativo.ticker }}</td>
+            <td>{{ p.tipo|default:'—' }}</td>
+            <td class="text-end valor-pos">R$ {{ p.valor }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">Nenhum provento neste ano.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

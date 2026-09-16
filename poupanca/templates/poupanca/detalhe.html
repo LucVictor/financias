@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Poupança — {{ conta.nome }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-piggy-bank"></i> {{ conta.nome }} — Histórico</h4>
+    <div>
+        <a href="{% url 'poupanca:nova_movimentacao' conta.pk %}" class="btn btn-success btn-sm">Movimentar</a>
+        <a href="{% url 'poupanca:editar' conta.pk %}" class="btn btn-outline-secondary btn-sm">Editar</a>
+        <a href="{% url 'poupanca:lista' %}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Saldo atual</div>
+                <h4 class="mb-0 valor-pos">R$ {{ conta.saldo_atual }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Taxa mensal efetiva</div>
+                <h4 class="mb-0">{{ conta.taxa_mensal_efetiva }}%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th class="text-end">Valor</th></tr>
+            </thead>
+            <tbody>
+                {% for m in movimentacoes %}
+                <tr>
+                    <td>{{ m.data|date:'d/m/Y' }}</td>
+                    <td>{{ m.descricao|default:'—' }}</td>
+                    <td><span class="badge {% if m.tipo == 'aporte' %}bg-success{% else %}bg-danger{% endif %}">{{ m.get_tipo_display }}</span></td>
+                    <td class="text-end {% if m.tipo == 'aporte' %}valor-pos{% else %}valor-neg{% endif %}">R$ {{ m.valor }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted py-4">Nenhuma movimentação.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

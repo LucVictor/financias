@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}{{ cartao.nome }} — Faturas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-receipt"></i> {{ cartao.nome }} — Faturas</h4>
+    <div>
+        <a href="{% url 'cartoes:nova_compra' cartao.pk %}" class="btn btn-success btn-sm">Nova compra</a>
+        <a href="{% url 'cartoes:editar' cartao.pk %}" class="btn btn-outline-secondary btn-sm">Editar</a>
+        <a href="{% url 'cartoes:lista' %}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Limite disponível</div>
+                <h5 class="mb-0 valor-pos">R$ {{ cartao.limite_disponivel|floatformat:2 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Fatura atual</div>
+                <h5 class="mb-0 valor-neg">R$ {{ cartao.saldo_devedor_fatura_atual|floatformat:2 }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Limite total</div>
+                <h5 class="mb-0">R$ {{ cartao.limite_total }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">Faturas recentes</h5>
+<div class="row g-2 mb-4">
+    {% for f in faturas %}
+    <div class="col-md-2">
+        <a href="?fatura={{ f.ano }}-{{ f.mes }}" class="text-decoration-none">
+            <div class="card {% if fatura_selecionada == f.ano|stringformat:'s'|add:'-'|add:f.mes|stringformat:'s' %}border-primary{% endif %}">
+                <div class="card-body p-2 text-center">
+                    <div class="small">{{ f.mes|floatformat:0|floatformat:0 }}/{{ f.ano }}</div>
+                    <strong class="valor-neg">R$ {{ f.valor_total }}</strong>
+                    <div class="mt-1">
+                        <span class="badge {% if f.estado == 'paga' %}bg-success{% elif f.estado == 'atrasada' %}bg-danger{% else %}bg-warning{% endif %}">
+                            {{ f.get_estado_display }}
+                        </span>
+                    </div>
+                    {% if f.estado != 'paga' %}
+                    <a href="{% url 'cartoes:pagar_fatura' f.pk %}" class="btn btn-sm btn-outline-success mt-2">
+                        <i class="bi bi-check-lg"></i> Pagar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+{% if compras_mes %}
+<h5>Parcelas da fatura {{ fatura_selecionada }}</h5>
+<div class="card mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Compra</th>
+                    <th>Categoria</th>
+                    <th>Parcela</th>
+                    <th>Status</th>
+                    <th class="text-end">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in compras_mes %}
+                <tr>
+                    <td>{{ p.compra.descricao }}</td>
+                    <td>{{ p.compra.categoria|default:'—' }}</td>
+                    <td>{{ p.numero_parcela }}/{{ p.compra.num_parcelas }}</td>
+                    <td>
+                        <span class="badge {% if p.status == 'paga' %}bg-success{% elif p.status == 'a_vencer' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                            {{ p.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-end">R$ {{ p.valor }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-active">
+                    <td colspan="4"><strong>Total</strong></td>
+                    <td class="text-end"><strong>{% for cat, tot in total_categoria.items %}{{ cat }}: R$ {{ tot }}<br>{% endfor %}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% elif fatura_selecionada %}
+<div class="alert alert-info">Nenhuma parcela nesta fatura.</div>
+{% endif %}
+{% endblock %}

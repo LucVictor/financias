@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Criptomoedas{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-currency-bitcoin"></i> Criptomoedas</h4>
+    <a href="{% url 'cripto:nova' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nova moeda</a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-dark">
+            <div class="card-body"><div class="small">Total em BRL</div><h3 class="mb-0">R$ {{ total_brl|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body"><div class="small">Total em USD</div><h3 class="mb-0">US$ {{ total_usd|floatformat:2 }}</h3></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Moeda</th><th>Quantidade</th><th>Cot. BRL</th><th>Cot. USD</th>
+                    <th>Cot. BTC</th><th>Valor (BRL)</th><th>Fonte</th><th>Atualizado em</th><th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in moedas %}
+                <tr>
+                    <td><strong>{{ m.simbolo }}</strong><br><small class="text-muted">{{ m.nome }}</small></td>
+                    <td>{{ m.quantidade }}</td>
+                    <td>R$ {{ m.cotacao_brl }}</td>
+                    <td>US$ {{ m.cotacao_usd }}</td>
+                    <td>{% if m.cotacao_btc is not None %}{{ m.cotacao_btc }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                    <td class="valor-pos">R$ {{ m.valor_brl|floatformat:2 }}</td>
+                    <td><span class="badge bg-secondary">{{ m.get_fonte_cotacao_display }}</span></td>
+                    <td>{% if m.atualizado_em %}{{ m.atualizado_em|date:'d/m/Y H:i' }}{% else %}—{% endif %}</td>
+                    <td>
+                        <a href="{% url 'cripto:editar' m.pk %}" class="btn btn-sm btn-outline-primary">Atualizar cotação</a>
+                        <a href="{% url 'cripto:excluir' m.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-4">Nenhuma criptomoeda cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<p class="text-muted small mt-2">
+    <i class="bi bi-info-circle"></i> Cotações informadas manualmente por enquanto. A estrutura já está
+    preparada para integração futura com APIs (CoinGecko/Binance) via <code>services/crypto_quotes.py</code>.
+</p>
+{% endblock %}

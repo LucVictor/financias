@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block title %}Fluxo de Caixa{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-calendar-month"></i> Fluxo de Caixa — {{ mes }}/{{ ano }}</h4>
+    <div>
+        <a href="{% url 'contas_periodicas:novo_avulso' %}" class="btn btn-outline-primary btn-sm">Recebimento avulso</a>
+        <a href="{% url 'contas_periodicas:novo_recebimento' %}" class="btn btn-outline-success btn-sm">Recebimento periódico</a>
+        <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Conta periódica</a>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-auto">
+        <label class="col-form-label-sm">Mês:</label>
+        <select name="mes" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            {% for p in periodos_mes %}
+            <option value="{{ p.value }}" {% if mes == p.value %}selected{% endif %}>{{ p.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="ano" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            {% for a in anos_disponiveis %}
+            <option value="{{ a }}" {% if ano == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="small">A pagar no mês</div>
+                <h3 class="mb-0">R$ {{ projecao.a_pagar|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="small">A receber no mês</div>
+                <h3 class="mb-0">R$ {{ projecao.a_receber|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if projecao.saldo_projetado >= 0 %}text-white bg-primary{% else %}text-white bg-warning{% endif %}">
+            <div class="card-body">
+                <div class="small">Saldo projetado</div>
+                <h3 class="mb-0">R$ {{ projecao.saldo_projetado|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="text-danger"><i class="bi bi-arrow-up-right"></i> A pagar</h5>
+            <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-sm btn-outline-danger">Nova conta</a>
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Descrição</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for o in ocorrencias_pagar %}
+                        <tr>
+                            <td>{{ o.conta_periodica.descricao }}</td>
+                            <td>{{ o.data_vencimento|date:'d/m/Y' }}</td>
+                            <td>R$ {{ o.valor }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if o.status == 'paga' %}bg-success
+                                    {% elif o.status == 'atrasada' %}bg-danger
+                                    {% elif o.status == 'vencendo_hoje' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ o.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if o.status != 'paga' %}
+                                <a href="{% url 'contas_periodicas:baixa_conta' o.pk %}" class="btn btn-sm btn-outline-success">Baixa</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Sem contas a pagar no mês.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if faturas_projecao %}
+        <h5 class="mt-4"><i class="bi bi-credit-card"></i> Faturas de cartão no mês</h5>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Cartão</th><th>Vencimento</th><th>Valor</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for f in faturas_projecao %}
+                        <tr>
+                            <td>{{ f.cartao.nome }}</td>
+                            <td>{{ f.data_vencimento|date:'d/m/Y' }}</td>
+                            <td>R$ {{ f.valor }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if f.situacao == 'atrasada' %}bg-danger
+                                    {% elif f.situacao == 'fechada' %}bg-warning text-dark
+                                    {% elif f.situacao == 'em_processamento' %}bg-info text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {% if f.situacao == 'em_processamento' %}Em processamento
+                                    {% elif f.situacao == 'fechada' %}Fechada
+                                    {% elif f.situacao == 'atrasada' %}Atrasada
+                                    {% else %}Futura{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'cartoes:detalhe' f.cartao.pk %}?fatura={{ ano }}-{{ mes }}"
+                                   class="btn btn-sm btn-outline-secondary">Ver fatura</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <h5 class="mt-4">Contas periódicas cadastradas</h5>
+        <ul class="list-group">
+            {% for c in contas_periodicas %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ c.descricao }}</strong><br>
+                    <small class="text-muted">{{ c.recorrência|title }} &middot; dia {{ c.dia_do_mes }} &middot; R$ {{ c.valor_esperado }}</small>
+                </div>
+                <div>
+                    <a href="{% url 'contas_periodicas:editar_conta' c.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    <a href="{% url 'contas_periodicas:excluir_conta' c.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Nenhuma conta periódica cadastrada.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="text-success"><i class="bi bi-arrow-down-left"></i> A receber</h5>
+            <a href="{% url 'contas_periodicas:novo_recebimento' %}" class="btn btn-sm btn-outline-success">Novo recebimento</a>
+        </div>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Descrição</th><th>Data prevista</th><th>Valor</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for o in ocorrencias_receber %}
+                        <tr>
+                            <td>{{ o.recebimento_periodico.descricao }}</td>
+                            <td>{{ o.data_prevista|date:'d/m/Y' }}</td>
+                            <td>R$ {{ o.valor }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if o.status == 'recebido' %}bg-success
+                                    {% elif o.status == 'atrasado' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ o.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if o.status != 'recebido' %}
+                                <a href="{% url 'contas_periodicas:baixa_recebimento' o.pk %}" class="btn btn-sm btn-outline-success">Receber</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted">Sem recebimentos periódicos no mês.</td></tr>
+                        {% endfor %}
+                        {% for a in avulsos %}
+                        <tr>
+                            <td>{{ a.descricao }} <span class="badge bg-light text-dark">avulso</span></td>
+                            <td>{{ a.data_prevista|date:'d/m/Y' }}</td>
+                            <td>R$ {{ a.valor }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if a.status == 'recebido' %}bg-success
+                                    {% elif a.status == 'atrasado' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ a.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if a.status != 'recebido' %}
+                                <a href="{% url 'contas_periodicas:baixa_avulso' a.pk %}" class="btn btn-sm btn-outline-success">Receber</a>
+                                {% endif %}
+                                <a href="{% url 'contas_periodicas:editar_avulso' a.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h5 class="mt-4">Recebimentos periódicos cadastrados</h5>
+        <ul class="list-group">
+            {% for r in recebimentos_periodicos %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ r.descricao }}</strong><br>
+                    <small class="text-muted">{{ r.recorrência|title }} &middot; dia {{ r.dia_do_mes }} &middot; R$ {{ r.valor_esperado }}</small>
+                </div>
+                <div>
+                    <a href="{% url 'contas_periodicas:editar_recebimento' r.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    <a href="{% url 'contas_periodicas:excluir_recebimento' r.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Nenhum recebimento periódico cadastrado.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
