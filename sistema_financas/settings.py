@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'contas_periodicas.apps.ContasPeriodicasConfig',
     'historico.apps.HistoricoConfig',
     'dashboard.apps.DashboardConfig',
+    'assistente.apps.AssistenteConfig',
 ]
 
 MIDDLEWARE = [
@@ -138,3 +139,10 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # ===== Config do snapshot de historico (em horas) =====
 SNAPSHOT_INTERVALO_HORAS = 8
+
+# ===== Assistente de IA (API Maritaca / OpenAI-compatível) =====
+MARITACA_API_KEY = os.environ.get('MARITACA_API_KEY', '')
+MARITACA_BASE_URL = os.environ.get('MARITACA_BASE_URL', 'https://chat.maritaca.ai/api')
+MARITACA_MODEL = os.environ.get('MARITACA_MODEL', 'sabia-4')
+MARITACA_MAX_TOKENS = int(os.environ.get('MARITACA_MAX_TOKENS', '2048'))
+MARITACA_TIMEOUT = int(os.environ.get('MARITACA_TIMEOUT', '60'))

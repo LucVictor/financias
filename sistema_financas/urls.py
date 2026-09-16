@@ -16,6 +16,7 @@ urlpatterns = [
     path('ativos/', include('renda_variavel.urls')),
     path('cripto/', include('cripto.urls')),
     path('fluxo/', include('contas_periodicas.urls')),
+    path('assistente/', include('assistente.urls')),
     path('accounts/login/',
          auth_views.LoginView.as_view(template_name='registration/login.html'),
          name='login'),

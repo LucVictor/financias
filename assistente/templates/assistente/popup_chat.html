@@ -1,0 +1,230 @@
+{% if user.is_authenticated %}
+<style>
+.ia-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    z-index: 1045;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+}
+.ia-panel {
+    position: fixed;
+    right: 24px;
+    bottom: 92px;
+    width: 400px;
+    height: 560px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 120px);
+    min-width: 260px;
+    min-height: 220px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1046;
+    resize: both;
+    font-size: .9rem;
+}
+.ia-panel.aberto { display: flex; }
+.ia-panel.resize-v { resize: vertical; }
+.ia-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #1d3557;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 12px 12px 0 0;
+    cursor: move;
+    user-select: none;
+}
+.ia-header .ia-titulo { flex: 1; }
+.ia-header button { color: #fff; font-size: 1rem; }
+.ia-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f8f9fa;
+}
+.ia-bolha {
+    max-width: 85%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+.ia-usuario { align-self: flex-end; background: #1d3557; color: #fff; border-bottom-right-radius: 4px; }
+.ia-bot { align-self: flex-start; background: #fff; color: #212529; border: 1px solid #dee2e6; border-bottom-left-radius: 4px; }
+.ia-lendo { align-self: flex-start; background: #fff; color: #6c757d; border: 1px solid #dee2e6; border-bottom-left-radius: 4px; font-style: italic; }
+.ia-input {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid #dee2e6;
+    background: #fff;
+}
+.ia-input textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: .9rem;
+    max-height: 120px;
+}
+</style>
+
+<button class="btn btn-primary ia-fab" id="ia-btn" type="button" title="Assistente de IA"
+        onclick="iaAlternar()">
+    <i class="bi bi-stars"></i>
+</button>
+
+<div class="ia-panel" id="ia-panel" aria-hidden="true">
+    <div class="ia-header" id="ia-header">
+        <i class="bi bi-stars"></i>
+        <span class="ia-titulo">Assistente Financeiro</span>
+        <button class="btn btn-sm btn-link" type="button" onclick="iaLimpar()" title="Limpar conversa">
+            <i class="bi bi-trash"></i>
+        </button>
+        <button class="btn btn-sm btn-link" type="button" onclick="iaAlternar()" title="Fechar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="ia-msgs" id="ia-msgs"></div>
+    <div class="ia-input">
+        <textarea id="ia-texto" rows="1" placeholder="Pergunte sobre suas finanças..."></textarea>
+        <button class="btn btn-primary" type="button" onclick="iaEnviar()"><i class="bi bi-send-fill"></i></button>
+    </div>
+</div>
+
+<script>
+(function () {
+    var inicial = [
+        {role: 'assistant', content: 'Olá! Sou seu assistente financeiro. Tenho acesso aos seus dados e posso ajudar com análise, dúvidas e sugestões. Como posso ajudar?'}
+    ];
+    var historico = [];
+    try {
+        historico = JSON.parse(sessionStorage.getItem('ia_historico') || '[]');
+    } catch (e) { historico = []; }
+    if (!historico.length) historico = inicial.slice();
+
+    var painelEl = document.getElementById('ia-panel');
+    var msgsEl = document.getElementById('ia-msgs');
+    var textoEl = document.getElementById('ia-texto');
+    var aberto = sessionStorage.getItem('ia_aberto') === '1';
+
+    function csrfToken() {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var parte = cookies[i].trim();
+            if (parte.indexOf('csrftoken=') === 0) return parte.substring('csrftoken='.length);
+        }
+        return '';
+    }
+
+    function desenhar() {
+        msgsEl.innerHTML = '';
+        historico.forEach(function (m) {
+            var div = document.createElement('div');
+            div.className = 'ia-bolha ' + (m.role === 'user' ? 'ia-usuario' : 'ia-bot');
+            div.textContent = m.content;
+            msgsEl.appendChild(div);
+        });
+        msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+    function salvar() {
+        sessionStorage.setItem('ia_historico', JSON.stringify(historico));
+    }
+    window.iaEnviar = function () {
+        var msg = textoEl.value.trim();
+        if (!msg) return;
+        historico.push({role: 'user', content: msg});
+        textoEl.value = '';
+        desenhar();
+        salvar();
+
+        var lendo = document.createElement('div');
+        lendo.className = 'ia-lendo';
+        lendo.textContent = 'Analisando seus dados...';
+        msgsEl.appendChild(lendo);
+        msgsEl.scrollTop = msgsEl.scrollHeight;
+
+        fetch('{% url "assistente:chat" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken()
+            },
+            body: JSON.stringify({mensagem: msg, historico: historico.slice(-19)})
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (dados) {
+            lendo.remove();
+            var resposta = dados.resposta || ('⚠ ' + (dados.erro || 'Resposta vazia.'));
+            historico.push({role: 'assistant', content: resposta});
+            desenhar();
+            salvar();
+        })
+        .catch(function () {
+            lendo.remove();
+            var resp = '⚠ Falha de comunicação com o servidor.';
+            historico.push({role: 'assistant', content: resp});
+            desenhar();
+            salvar();
+        });
+    };
+    window.iaLimpar = function () {
+        historico = inicial.slice();
+        salvar();
+        desenhar();
+    };
+    window.iaAlternar = function () {
+        aberto = !aberto;
+        painelEl.classList.toggle('aberto', aberto);
+        painelEl.setAttribute('aria-hidden', aberto ? 'false' : 'true');
+        sessionStorage.setItem('ia_aberto', aberto ? '1' : '0');
+        if (aberto) { desenhar(); textoEl.focus(); }
+    };
+    if (aberto) painelEl.classList.add('aberto');
+    desenhar();
+
+    // Drag pelo cabeçalho + janela espanhola (mantém dentro da viewport)
+    var arrastando = null;
+    var header = document.getElementById('ia-header');
+    header.addEventListener('mousedown', function (e) {
+        if (e.target.tagName === 'BUTTON') return;
+        arrastando = {x: e.clientX, y: e.clientY};
+        document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', function (e) {
+        if (!arrastando) return;
+        var giro = painelEl.getBoundingClientRect();
+        var nx = giro.left + (e.clientX - arrastando.x);
+        var ny = giro.top + (e.clientY - arrastando.y);
+        nx = Math.max(0, Math.min(nx, window.innerWidth - 60));
+        ny = Math.max(0, Math.min(ny, window.innerHeight - 40));
+        painelEl.style.left = nx + 'px';
+        painelEl.style.top = ny + 'px';
+        painelEl.style.right = 'auto';
+        painelEl.style.bottom = 'auto';
+    });
+    document.addEventListener('mouseup', function () {
+        arrastando = null;
+        document.body.style.userSelect = '';
+    });
+    textoEl.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.iaEnviar(); }
+    });
+})();
+</script>
+{% endif %}
