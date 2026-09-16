@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}{{ divida.descricao }} — Dívida{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-exclamation-triangle"></i> {{ divida.descricao }}</h4>
+    <div>
+        <a href="{% url 'dividas:editar' divida.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+        <a href="{% url 'dividas:excluir' divida.pk %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> Excluir</a>
+        <a href="{% url 'dividas:lista' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="small text-muted">Total</div>
+                <h5 class="mb-0">R$ {{ divida.valor_total }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="small text-muted">Pago</div>
+                <h5 class="mb-0 valor-pos">R$ {{ divida.valor_pago }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="small text-muted">Restante</div>
+                <h5 class="mb-0 valor-neg">R$ {{ divida.valor_restante }}</h5>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="small text-muted">Status</div>
+                <h5 class="mb-0">
+                    <span class="badge
+                        {% if divida.status == 'em_dia' %}bg-success
+                        {% elif divida.status == 'a_pagar' %}bg-secondary
+                        {% else %}bg-danger{% endif %}">
+                        {{ divida.get_status_display }}
+                    </span>
+                </h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <small class="text-muted">
+            {% if divida.credor %}<i class="bi bi-person"></i> {{ divida.credor }} &middot; {% endif %}
+            <i class="bi bi-calendar"></i> Vencimento: {{ divida.data_vencimento|date:'d/m/Y' }} &middot;
+            <i class="bi bi-layers"></i> {{ divida.num_parcelas }}x de R$ {{ divida.valor_parcela }} &middot;
+            {% if divida.para_pagamento %}<span class="text-primary"><i class="bi bi-check-lg"></i> Considera para pagamento no fluxo</span>
+            {% else %}Só registro{% endif %}
+            {% if divida.observacoes %}<br><i class="bi bi-chat-left-text"></i> {{ divida.observacoes }}{% endif %}
+        </small>
+    </div>
+</div>
+
+<h5>Parcelas</h5>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Status</th><th>Pago em</th><th class="text-end"></th></tr>
+            </thead>
+            <tbody>
+                {% for p in parcelas %}
+                <tr>
+                    <td>{{ p.numero }}/{{ divida.num_parcelas }}</td>
+                    <td>
+                        {{ p.data_vencimento|date:'d/m/Y' }}
+                        {% if p.vencida and p.status == 'a_pagar' %}<span class="badge bg-danger">atrasada</span>{% endif %}
+                    </td>
+                    <td>R$ {{ p.valor }}</td>
+                    <td>
+                        <span class="badge {% if p.status == 'paga' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ p.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ p.data_pagamento|date:'d/m/Y'|default:'—' }}</td>
+                    <td class="text-end">
+                        {% if p.status == 'a_pagar' %}
+                        <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline"
+                              data-confirm="Pagar a parcela {{ p.numero }} de &quot;{{ divida.descricao }}&quot;?">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'dividas:detalhe' divida.pk %}">
+                            <button class="btn btn-sm btn-success">Pagar parcela</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Nenhuma parcela gerada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

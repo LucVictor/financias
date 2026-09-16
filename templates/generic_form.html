@@ -10,7 +10,7 @@
         </div>
         <div class="card">
             <div class="card-body">
-                <form method="post" {% if multipart %}enctype="multipart/form-data"{% endif %}>
+                <form method="post" {% if multipart %}enctype="multipart/form-data"{% endif %} {% if confirm_submit %}data-confirm="{{ confirm_submit }}"{% endif %}>
                     {% csrf_token %}
                     {% if form.non_field_errors %}
                         <div class="alert alert-danger">{{ form.non_field_errors }}</div>

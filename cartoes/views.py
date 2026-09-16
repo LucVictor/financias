@@ -127,4 +127,5 @@ def pagar_fatura(request, pk):
         'back_url': reverse('cartoes:detalhe', args=[fatura.cartao.pk]),
         'icone': 'bi-check2-circle',
         'submit_label': 'Quitar fatura',
+        'confirm_submit': 'Confirmar quitação da fatura? As parcelas serão marcadas como pagas.',
     })

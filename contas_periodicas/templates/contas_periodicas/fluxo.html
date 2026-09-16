@@ -179,8 +179,10 @@
                             <td>{{ p.data_vencimento|date:'d/m/Y' }}</td>
                             <td>R$ {{ p.valor }}</td>
                             <td class="text-end">
-                                <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline">
+                                <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline"
+                                      data-confirm="Pagar a parcela {{ p.numero }} de &quot;{{ p.divida.descricao }}&quot;?">
                                     {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% url 'contas_periodicas:home' %}?mes={{ mes }}&amp;ano={{ ano }}">
                                     <button class="btn btn-sm btn-success">Pagar</button>
                                 </form>
                             </td>

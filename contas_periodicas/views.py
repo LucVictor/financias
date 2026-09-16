@@ -180,6 +180,7 @@ def dar_baixa_conta(request, pk):
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-check2-circle',
         'submit_label': 'Confirmar baixa',
+        'confirm_submit': f'Confirmar pagamento de "{ocorrencia.conta_periodica.descricao}"?',
     })
 
 
@@ -262,6 +263,7 @@ def dar_baixa_pagamento_avulso(request, pk):
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-check2-circle',
         'submit_label': 'Confirmar baixa',
+        'confirm_submit': f'Confirmar pagamento de "{avulso.descricao}"?',
     })
 
 
@@ -346,6 +348,7 @@ def dar_baixa_recebimento(request, pk):
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-cash-coin',
         'submit_label': 'Confirmar recebimento',
+        'confirm_submit': f'Confirmar recebimento de "{ocorrencia.recebimento_periodico.descricao}"?',
     })
 
 
@@ -427,4 +430,5 @@ def dar_baixa_avulso(request, pk):
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-cash-coin',
         'submit_label': 'Confirmar recebimento',
+        'confirm_submit': f'Confirmar recebimento de "{avulso.descricao}"?',
     })
