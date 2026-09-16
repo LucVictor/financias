@@ -4,6 +4,7 @@ from .models import (
     ContaPeriodica,
     OcorrenciaContaPeriodica,
     OcorrenciaRecebimento,
+    PagamentoAvulso,
     RecebimentoAvulso,
     RecebimentoPeriodico,
 )
@@ -41,6 +42,12 @@ class RecebimentoPeriodicoAdmin(admin.ModelAdmin):
 @admin.register(OcorrenciaRecebimento)
 class OcorrenciaRecebimentoAdmin(admin.ModelAdmin):
     list_display = ['recebimento_periodico', 'data_prevista', 'valor', 'status', 'data_recebimento']
+    list_filter = ['status']
+
+
+@admin.register(PagamentoAvulso)
+class PagamentoAvulsoAdmin(admin.ModelAdmin):
+    list_display = ['descricao', 'valor', 'data_pagamento', 'status', 'data_efetiva_pagamento']
     list_filter = ['status']
 
 

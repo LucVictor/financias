@@ -6,12 +6,14 @@ from django.utils import timezone
 
 from sistema_financas.helpers import success_message
 from .forms import DividaForm
-from .models import Divida
+from .models import Divida, ParcelaDivida
 
 
 @login_required
 def lista(request):
     dividas = Divida.objects.filter(ativa=True)
+    for d in dividas:
+        d.atualizar_status()
     total_bruto = dividas.aggregate(t=Sum('valor_total'))['t'] or 0
     total_pago = dividas.aggregate(t=Sum('valor_pago'))['t'] or 0
     total_em_aberto = total_bruto - total_pago
@@ -25,7 +27,8 @@ def lista(request):
 def nova(request):
     form = DividaForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        divida = form.save()
+        divida.atualizar_status()
         success_message(request, 'Dívida cadastrada.')
         return redirect(reverse('dividas:lista'))
     return render(request, 'generic_form.html', {
@@ -41,7 +44,8 @@ def editar(request, pk):
     divida = get_object_or_404(Divida, pk=pk)
     form = DividaForm(request.POST or None, instance=divida)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        divida = form.save()
+        divida.atualizar_status()
         success_message(request, 'Dívida atualizada.')
         return redirect(reverse('dividas:lista'))
     return render(request, 'generic_form.html', {
@@ -63,3 +67,20 @@ def excluir(request, pk):
         'objeto': divida,
         'back_url': reverse('dividas:lista'),
     })
+
+
+@login_required
+def pagar_parcela(request, pk):
+    parcela = get_object_or_404(ParcelaDivida, pk=pk, status='a_pagar')
+    if request.method == 'POST':
+        parcela.status = 'paga'
+        parcela.data_pagamento = timezone.localdate()
+        parcela.save(update_fields=['status', 'data_pagamento'])
+        divida = parcela.divida
+        divida._sync_valores()
+        divida.atualizar_status()
+        success_message(
+            request,
+            f'Parcela {parcela.numero} de "{divida.descricao}" paga.',
+        )
+    return redirect(reverse('dividas:lista'))

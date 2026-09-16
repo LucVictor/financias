@@ -177,6 +177,57 @@ class OcorrenciaRecebimento(models.Model):
         self.save(update_fields=['status'])
 
 
+class PagamentoAvulso(models.Model):
+    """Pagamento pontual (avulso) a pagar — casas de câmbio, multas, IPVA etc."""
+    STATUS_CHOICES = [
+        ('a_pagar', 'A pagar (futuro)'),
+        ('vencendo_hoje', 'Vencendo hoje'),
+        ('atrasado', 'Atrasado'),
+        ('pago', 'Pago'),
+    ]
+
+    descricao = models.CharField(max_length=255)
+    valor = models.DecimalField(max_digits=15, decimal_places=2)
+    data_pagamento = models.DateField(verbose_name='Data de pagamento')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='a_pagar')
+    data_efetiva_pagamento = models.DateField(null=True, blank=True, verbose_name='Data efetiva do pagamento')
+    valor_pago = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    conta_pagamento = models.ForeignKey(
+        'contas.Banco', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='pagamentos_avulsos',
+    )
+    movimentacao = models.ForeignKey(
+        'contas.Movimentacao', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='ocorrencias_pagamento_avulso',
+    )
+    observacoes = models.TextField(blank=True, default='')
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Pagamento Avulso'
+        verbose_name_plural = 'Pagamentos Avulsos'
+        ordering = ['data_pagamento']
+
+    def __str__(self):
+        return self.descricao
+
+    @property
+    def atrasado(self):
+        return self.data_pagamento < timezone.localdate() and self.status != 'pago'
+
+    def atualizar_status(self):
+        hoje = timezone.localdate()
+        if self.status == 'pago':
+            return
+        if self.data_pagamento < hoje:
+            self.status = 'atrasado'
+        elif self.data_pagamento == hoje:
+            self.status = 'vencendo_hoje'
+        else:
+            self.status = 'a_pagar'
+        self.save(update_fields=['status'])
+
+
 class RecebimentoAvulso(models.Model):
     STATUS_CHOICES = [
         ('a_receber', 'A receber (futuro)'),

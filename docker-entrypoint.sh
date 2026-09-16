@@ -13,6 +13,9 @@ case "${SERVICE:-web}" in
       --workers "${WEB_CONCURRENCY:-3}" \
       --timeout 120
     ;;
+  runserver)
+    exec python manage.py runserver 0.0.0.0:"${PORT:-8000}" --noreload
+    ;;
   worker)
     exec celery -A sistema_financas worker -l info
     ;;

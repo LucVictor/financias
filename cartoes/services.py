@@ -35,14 +35,22 @@ def get_or_create_fatura(cartao, ano, mes):
 
 
 def faturas_recentes(cartao, meses=6):
-    """Retorna dicionário ano/mês -> fatura para os últimos `meses` meses + o atual."""
+    """Retorna lista de faturas para os últimos `meses` meses + o atual.
+
+    Faturas passadas sem valores (total zero, ex.: cartão recém-criado) são
+    consideradas pagas, para não aparecerem como atrasadas. Se depois uma
+    fatura passada ganhar parcelas não pagas, volta a ser atrasada.
+    """
     hoje = timezone.localdate()
     resultado = []
     for i in range(meses - 1, -1, -1):
         ano, mes = proximo_mes(hoje.year, hoje.month, -i)
         fatura = get_or_create_fatura(cartao, ano, mes)
-        if fatura.estado == 'aberta' and fatura.data_vencimento < hoje:
-            fatura.estado = 'atrasada'
+        if fatura.data_vencimento < hoje:
+            if fatura.parcelas.exclude(status='paga').exists():
+                fatura.estado = 'atrasada'
+            else:
+                fatura.estado = 'paga'
             fatura.save(update_fields=['estado'])
         resultado.append(fatura)
     return resultado

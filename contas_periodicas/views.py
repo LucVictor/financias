@@ -6,11 +6,13 @@ from django.utils import timezone
 from contas.models import Movimentacao
 from cartoes.services import previsao_faturas_fluxo
 from dashboard.services import projecao_fluxo_caixa
+from dividas.models import ParcelaDivida
 from sistema_financas.helpers import erro_message, success_message
 from .forms import (
     BaixaContaForm,
     BaixaRecebimentoForm,
     ContaPeriodicaForm,
+    PagamentoAvulsoForm,
     RecebimentoAvulsoForm,
     RecebimentoPeriodicoForm,
 )
@@ -18,6 +20,7 @@ from .models import (
     ContaPeriodica,
     OcorrenciaContaPeriodica,
     OcorrenciaRecebimento,
+    PagamentoAvulso,
     RecebimentoAvulso,
     RecebimentoPeriodico,
 )
@@ -49,7 +52,24 @@ def _contexto_fluxo(ano=None, mes=None):
         .filter(data_prevista__year=ano, data_prevista__month=mes)
         .order_by('data_prevista')
     )
+    pagamentos_avulsos = (
+        PagamentoAvulso.objects
+        .filter(data_pagamento__year=ano, data_pagamento__month=mes)
+        .order_by('data_pagamento')
+    )
     faturas_projecao = previsao_faturas_fluxo(ano, mes)
+    parcelas_dividas = (
+        ParcelaDivida.objects
+        .filter(
+            divida__para_pagamento=True,
+            divida__ativa=True,
+            status='a_pagar',
+            data_vencimento__year=ano,
+            data_vencimento__month=mes,
+        )
+        .select_related('divida')
+        .order_by('data_vencimento')
+    )
     periodos_mes = [{'value': str(m), 'label': f'{m:02d}/{ano}'} for m in range(1, 13)]
     anos_disponiveis = list(range(ano, ano - 3, -1))
     return {
@@ -59,9 +79,11 @@ def _contexto_fluxo(ano=None, mes=None):
         'anos_disponiveis': anos_disponiveis,
         'projecao': projecao,
         'ocorrencias_pagar': ocorrencias_pagar,
+        'pagamentos_avulsos': pagamentos_avulsos,
         'ocorrencias_receber': ocorrencias_receber,
         'avulsos': avulsos,
         'faturas_projecao': faturas_projecao,
+        'parcelas_dividas': parcelas_dividas,
         'contas_periodicas': ContaPeriodica.objects.filter(ativo=True),
         'recebimentos_periodicos': RecebimentoPeriodico.objects.filter(ativo=True),
     }
@@ -154,6 +176,88 @@ def dar_baixa_conta(request, pk):
         return redirect(reverse('contas_periodicas:home'))
     return render(request, 'generic_form.html', {
         'titulo': f'Dar baixa: {ocorrencia.conta_periodica.descricao} ({ocorrencia.data_vencimento:%d/%m/%Y})',
+        'form': form,
+        'back_url': reverse('contas_periodicas:home'),
+        'icone': 'bi-check2-circle',
+        'submit_label': 'Confirmar baixa',
+    })
+
+
+# ===== Pagamentos avulsos (a pagar) =====
+
+@login_required
+def novo_pagamento_avulso(request):
+    form = PagamentoAvulsoForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        success_message(request, 'Pagamento avulso cadastrado.')
+        return redirect(reverse('contas_periodicas:home'))
+    return render(request, 'generic_form.html', {
+        'titulo': 'Novo Pagamento Avulso',
+        'form': form,
+        'back_url': reverse('contas_periodicas:home'),
+        'icone': 'bi-arrow-up-circle',
+    })
+
+
+@login_required
+def editar_pagamento_avulso(request, pk):
+    avulso = get_object_or_404(PagamentoAvulso, pk=pk)
+    form = PagamentoAvulsoForm(request.POST or None, instance=avulso)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        success_message(request, 'Pagamento avulso atualizado.')
+        return redirect(reverse('contas_periodicas:home'))
+    return render(request, 'generic_form.html', {
+        'titulo': f'Editar {avulso.descricao}',
+        'form': form,
+        'back_url': reverse('contas_periodicas:home'),
+        'icone': 'bi-arrow-up-circle',
+    })
+
+
+@login_required
+def excluir_pagamento_avulso(request, pk):
+    avulso = get_object_or_404(PagamentoAvulso, pk=pk)
+    if request.method == 'POST':
+        avulso.delete()
+        success_message(request, 'Pagamento avulso excluído.')
+        return redirect(reverse('contas_periodicas:home'))
+    return render(request, 'generic_confirm_delete.html', {
+        'objeto': avulso,
+        'back_url': reverse('contas_periodicas:home'),
+    })
+
+
+@login_required
+def dar_baixa_pagamento_avulso(request, pk):
+    avulso = get_object_or_404(PagamentoAvulso, pk=pk)
+    form = BaixaContaForm(request.POST or None, initial={
+        'data_efetiva': timezone.localdate(),
+        'valor': avulso.valor,
+        'conta': avulso.conta_pagamento,
+        'meio': 'conta' if avulso.conta_pagamento else 'dinheiro',
+    })
+    if request.method == 'POST' and form.is_valid():
+        dados = form.cleaned_data
+        mov = None
+        if dados['meio'] == 'conta' and dados['conta']:
+            mov = Movimentacao.objects.create(
+                conta=dados['conta'],
+                descricao=f'{avulso.descricao} (avulso)',
+                valor=dados['valor'],
+                data=dados['data_efetiva'],
+                tipo='saida',
+            )
+        avulso.status = 'pago'
+        avulso.data_efetiva_pagamento = dados['data_efetiva']
+        avulso.valor_pago = dados['valor']
+        avulso.movimentacao = mov
+        avulso.save()
+        success_message(request, 'Baixa registrada. Saldo da conta atualizado.')
+        return redirect(reverse('contas_periodicas:home'))
+    return render(request, 'generic_form.html', {
+        'titulo': f'Dar baixa: {avulso.descricao}',
         'form': form,
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-check2-circle',

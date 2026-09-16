@@ -60,7 +60,10 @@
     <div class="col-lg-6">
         <div class="d-flex justify-content-between align-items-center">
             <h5 class="text-danger"><i class="bi bi-arrow-up-right"></i> A pagar</h5>
-            <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-sm btn-outline-danger">Nova conta</a>
+            <div>
+                <a href="{% url 'contas_periodicas:novo_pagamento_avulso' %}" class="btn btn-sm btn-outline-danger">Pagamento avulso</a>
+                <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-sm btn-outline-danger">Nova conta</a>
+            </div>
         </div>
         <div class="card">
             <div class="table-responsive">
@@ -91,6 +94,28 @@
                         </tr>
                         {% empty %}
                         <tr><td colspan="5" class="text-center text-muted">Sem contas a pagar no mês.</td></tr>
+                        {% endfor %}
+                        {% for p in pagamentos_avulsos %}
+                        <tr>
+                            <td>{{ p.descricao }} <span class="badge bg-light text-dark">avulso</span></td>
+                            <td>{{ p.data_pagamento|date:'d/m/Y' }}</td>
+                            <td>R$ {{ p.valor }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if p.status == 'pago' %}bg-success
+                                    {% elif p.status == 'atrasado' %}bg-danger
+                                    {% elif p.status == 'vencendo_hoje' %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ p.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if p.status != 'pago' %}
+                                <a href="{% url 'contas_periodicas:baixa_pagamento_avulso' p.pk %}" class="btn btn-sm btn-outline-success">Baixa</a>
+                                {% endif %}
+                                <a href="{% url 'contas_periodicas:editar_pagamento_avulso' p.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -126,6 +151,38 @@
                             <td>
                                 <a href="{% url 'cartoes:detalhe' f.cartao.pk %}?fatura={{ ano }}-{{ mes }}"
                                    class="btn btn-sm btn-outline-secondary">Ver fatura</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if parcelas_dividas %}
+        <h5 class="mt-4"><i class="bi bi-exclamation-triangle"></i> Dívidas para pagamento</h5>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Dívida</th><th>Parcela</th><th>Vencimento</th><th>Valor</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in parcelas_dividas %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border">dívida</span>
+                                {{ p.divida.descricao }}
+                            </td>
+                            <td>{{ p.numero }}/{{ p.divida.num_parcelas }}</td>
+                            <td>{{ p.data_vencimento|date:'d/m/Y' }}</td>
+                            <td>R$ {{ p.valor }}</td>
+                            <td class="text-end">
+                                <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-success">Pagar</button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

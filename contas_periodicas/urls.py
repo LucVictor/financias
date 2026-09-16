@@ -18,4 +18,8 @@ urlpatterns = [
     path('avulsos/<int:pk>/editar/', views.editar_avulso, name='editar_avulso'),
     path('avulsos/<int:pk>/excluir/', views.excluir_avulso, name='excluir_avulso'),
     path('avulsos/<int:pk>/baixa/', views.dar_baixa_avulso, name='baixa_avulso'),
+    path('pagamentos-avulsos/novo/', views.novo_pagamento_avulso, name='novo_pagamento_avulso'),
+    path('pagamentos-avulsos/<int:pk>/editar/', views.editar_pagamento_avulso, name='editar_pagamento_avulso'),
+    path('pagamentos-avulsos/<int:pk>/excluir/', views.excluir_pagamento_avulso, name='excluir_pagamento_avulso'),
+    path('pagamentos-avulsos/<int:pk>/baixa/', views.dar_baixa_pagamento_avulso, name='baixa_pagamento_avulso'),
 ]

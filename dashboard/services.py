@@ -11,10 +11,11 @@ from cartoes.services import previsao_faturas_fluxo
 from contas_periodicas.models import (
     OcorrenciaContaPeriodica,
     OcorrenciaRecebimento,
+    PagamentoAvulso,
     RecebimentoAvulso,
 )
 from cripto.models import Criptomoeda, HistoricoCripto
-from dividas.models import Divida, HistoricoDivida
+from dividas.models import Divida, HistoricoDivida, ParcelaDivida
 from poupanca.models import ContaPoupanca, HistoricoPoupanca
 from renda_fixa.models import AplicacaoCDB, HistoricoCDB
 from renda_fixa.services import calcular_valor_bruto
@@ -95,6 +96,29 @@ def projecao_fluxo_caixa(mes: int | None = None, ano: int | None = None) -> dict
     faturas = previsao_faturas_fluxo(ano, mes)
     a_pagar += sum((f['valor'] for f in faturas), Decimal('0'))
     infos_pagar_texto += [(f'Fatura {f["cartao"].nome}', f['valor']) for f in faturas]
+
+    # Pagamentos avulsos (pontuais) do mês
+    a_pagar += PagamentoAvulso.objects.filter(
+        data_pagamento__year=ano, data_pagamento__month=mes
+    ).exclude(status='pago').aggregate(t=Sum('valor'))['t'] or Decimal('0')
+    infos_pagar_texto += list(
+        PagamentoAvulso.objects.filter(
+            data_pagamento__year=ano, data_pagamento__month=mes
+        ).exclude(status='pago').values_list('descricao', 'valor')
+    )
+
+    # Parcelas de dívidas marcadas "para pagamento"
+    parcelas_dividas = ParcelaDivida.objects.filter(
+        divida__para_pagamento=True,
+        divida__ativa=True,
+        status='a_pagar',
+        data_vencimento__year=ano,
+        data_vencimento__month=mes,
+    )
+    a_pagar += parcelas_dividas.aggregate(t=Sum('valor'))['t'] or Decimal('0')
+    infos_pagar_texto += list(
+        parcelas_dividas.values_list('divida__descricao', 'valor')
+    )
 
     # A receber: recebimentos periódicos + avulsos
     a_receber = OcorrenciaRecebimento.objects.filter(

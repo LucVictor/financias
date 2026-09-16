@@ -24,7 +24,8 @@
             <thead>
                 <tr>
                     <th>Descrição</th><th>Credor</th><th>Total</th><th>Pago</th>
-                    <th>Restante</th><th>Vencimento</th><th>Status</th><th></th>
+                    <th>Restante</th><th>Parcelas</th><th>Status</th>
+                    <th>Fluxo</th><th></th>
                 </tr>
             </thead>
             <tbody>
@@ -36,8 +37,10 @@
                     <td class="valor-pos">R$ {{ d.valor_pago }}</td>
                     <td class="valor-neg">R$ {{ d.valor_restante }}</td>
                     <td>
-                        {{ d.data_vencimento|date:'d/m/Y' }}
-                        {% if d.dias_em_atraso %}<br><small class="text-danger">{{ d.dias_em_atraso }} dias atraso</small>{% endif %}
+                        {{ d.parcelas_pagas }}/{{ d.num_parcelas }}
+                        {% if d.proxima_parcela %}
+                            <br><small>Próx.: {{ d.proxima_parcela.data_vencimento|date:'d/m/Y' }}</small>
+                        {% endif %}
                     </td>
                     <td>
                         <span class="badge
@@ -46,14 +49,56 @@
                             {% else %}bg-danger{% endif %}">
                             {{ d.get_status_display }}
                         </span>
+                        {% if d.dias_em_atraso %}<br><small class="text-danger">{{ d.dias_em_atraso }} dias atraso</small>{% endif %}
                     </td>
                     <td>
+                        {% if d.para_pagamento %}
+                            <span class="badge bg-primary"><i class="bi bi-check-lg"></i> Para pagamento</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted border">Só registro</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-nowrap">
                         <a href="{% url 'dividas:editar' d.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
                         <a href="{% url 'dividas:excluir' d.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">Nenhuma dívida cadastrada.</td></tr>
+                <tr><td colspan="9" class="text-center text-muted py-4">Nenhuma dívida cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">Parcelas a pagar</div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr><th>Dívida</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for d in dividas %}
+                    {% for p in d.parcelas_abertas %}
+                    <tr>
+                        <td>{{ p.divida.descricao }}</td>
+                        <td>{{ p.numero }}/{{ d.num_parcelas }}</td>
+                        <td>R$ {{ p.valor }}</td>
+                        <td>
+                            {{ p.data_vencimento|date:'d/m/Y' }}
+                            {% if p.vencida %}<small class="text-danger">(atrasada)</small>{% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-success">Pagar parcela</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-3">Nenhuma parcela pendente.</td></tr>
+                    {% endfor %}
                 {% endfor %}
             </tbody>
         </table>

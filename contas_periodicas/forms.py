@@ -4,6 +4,7 @@ from contas.models import Banco
 from sistema_financas.helpers import BootstrapFormMixin
 from .models import (
     ContaPeriodica,
+    PagamentoAvulso,
     RecebimentoAvulso,
     RecebimentoPeriodico,
 )
@@ -34,6 +35,15 @@ class RecebimentoAvulsoForm(BootstrapFormMixin, forms.ModelForm):
             'descricao', 'valor', 'data_prevista', 'conta_destino', 'observacoes',
         ]
         widgets = {'data_prevista': forms.DateInput(attrs={'type': 'date'})}
+
+
+class PagamentoAvulsoForm(BootstrapFormMixin, forms.ModelForm):
+    class Meta:
+        model = PagamentoAvulso
+        fields = [
+            'descricao', 'valor', 'data_pagamento', 'conta_pagamento', 'observacoes',
+        ]
+        widgets = {'data_pagamento': forms.DateInput(attrs={'type': 'date'})}
 
 
 class BaixaContaForm(BootstrapFormMixin, forms.Form):

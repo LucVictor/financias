@@ -9,9 +9,10 @@ from django.utils import timezone
 from .models import (
     ContaPeriodica,
     OcorrenciaContaPeriodica,
-    RecebimentoPeriodico,
     OcorrenciaRecebimento,
+    PagamentoAvulso,
     RecebimentoAvulso,
+    RecebimentoPeriodico,
 )
 
 
@@ -88,6 +89,8 @@ def atualizar_status_das_pendencias():
         ocorrencia.atualizar_status()
     for ocorrencia in OcorrenciaRecebimento.objects.exclude(status='recebido'):
         ocorrencia.atualizar_status()
+    for avulso in PagamentoAvulso.objects.exclude(status='pago'):
+        avulso.atualizar_status()
     for avulso in RecebimentoAvulso.objects.exclude(status='recebido'):
         avulso.atualizar_status()
 

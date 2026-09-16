@@ -9,8 +9,7 @@ class DividaForm(BootstrapFormMixin, forms.ModelForm):
         model = Divida
         fields = [
             'descricao', 'credor', 'valor_total', 'valor_pago', 'data_vencimento',
-            'num_parcelas', 'valor_parcela', 'parcelas_restantes', 'status',
-            'ativa', 'observacoes',
+            'num_parcelas', 'valor_parcela', 'para_pagamento', 'ativa', 'observacoes',
         ]
         widgets = {
             'data_vencimento': forms.DateInput(attrs={'type': 'date'}),
