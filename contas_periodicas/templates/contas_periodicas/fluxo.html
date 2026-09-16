@@ -2,32 +2,7 @@
 {% block title %}Fluxo de Caixa{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4><i class="bi bi-calendar-month"></i> Fluxo de Caixa — {{ mes }}/{{ ano }}</h4>
-    <div>
-        <a href="{% url 'contas_periodicas:novo_avulso' %}" class="btn btn-outline-primary btn-sm">Recebimento avulso</a>
-        <a href="{% url 'contas_periodicas:novo_recebimento' %}" class="btn btn-outline-success btn-sm">Recebimento periódico</a>
-        <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Conta periódica</a>
-    </div>
-</div>
-
-<form method="get" class="row g-2 mb-3 align-items-center">
-    <div class="col-auto">
-        <label class="col-form-label-sm">Mês:</label>
-        <select name="mes" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
-            {% for p in periodos_mes %}
-            <option value="{{ p.value }}" {% if mes == p.value %}selected{% endif %}>{{ p.label }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-auto">
-        <select name="ano" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
-            {% for a in anos_disponiveis %}
-            <option value="{{ a }}" {% if ano == a %}selected{% endif %}>{{ a }}</option>
-            {% endfor %}
-        </select>
-    </div>
-</form>
+{% include 'contas_periodicas/partials/fluxo_toolbar.html' %}
 
 <div class="row mb-4">
     <div class="col-md-3">
@@ -182,7 +157,7 @@
                                 <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline"
                                       data-confirm="Pagar a parcela {{ p.numero }} de &quot;{{ p.divida.descricao }}&quot;?">
                                     {% csrf_token %}
-                                    <input type="hidden" name="next" value="{% url 'contas_periodicas:home' %}?mes={{ mes }}&amp;ano={{ ano }}">
+                                    <input type="hidden" name="next" value="{% url 'contas_periodicas:home' %}?mes={{ mes }}&amp;ano={{ ano }}&amp;layout={{ layout }}">
                                     <button class="btn btn-sm btn-success">Pagar</button>
                                 </form>
                             </td>
@@ -193,24 +168,6 @@
             </div>
         </div>
         {% endif %}
-
-        <h5 class="mt-4">Contas periódicas cadastradas</h5>
-        <ul class="list-group">
-            {% for c in contas_periodicas %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ c.descricao }}</strong><br>
-                    <small class="text-muted">{{ c.recorrência|title }} &middot; dia {{ c.dia_do_mes }} &middot; R$ {{ c.valor_esperado }}</small>
-                </div>
-                <div>
-                    <a href="{% url 'contas_periodicas:editar_conta' c.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                    <a href="{% url 'contas_periodicas:excluir_conta' c.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
-                </div>
-            </li>
-            {% empty %}
-            <li class="list-group-item text-muted">Nenhuma conta periódica cadastrada.</li>
-            {% endfor %}
-        </ul>
     </div>
 
     <div class="col-lg-6">
@@ -272,24 +229,8 @@
                 </table>
             </div>
         </div>
-
-        <h5 class="mt-4">Recebimentos periódicos cadastrados</h5>
-        <ul class="list-group">
-            {% for r in recebimentos_periodicos %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>{{ r.descricao }}</strong><br>
-                    <small class="text-muted">{{ r.recorrência|title }} &middot; dia {{ r.dia_do_mes }} &middot; R$ {{ r.valor_esperado }}</small>
-                </div>
-                <div>
-                    <a href="{% url 'contas_periodicas:editar_recebimento' r.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                    <a href="{% url 'contas_periodicas:excluir_recebimento' r.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
-                </div>
-            </li>
-            {% empty %}
-            <li class="list-group-item text-muted">Nenhum recebimento periódico cadastrado.</li>
-            {% endfor %}
-        </ul>
     </div>
 </div>
+
+{% include 'contas_periodicas/partials/fluxo_cadastradas.html' %}
 {% endblock %}

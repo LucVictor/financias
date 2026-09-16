@@ -1,0 +1,111 @@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Todas as contas a pagar — {{ mes }}/{{ ano }}</span>
+        <strong class="text-danger">Total: R$ {{ projecao.a_pagar|floatformat:2 }}</strong>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead>
+                <tr><th>Origem</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Situação</th><th class="text-end"></th></tr>
+            </thead>
+            <tbody>
+                {% if ocorrencias_pagar or pagamentos_avulsos or faturas_projecao or parcelas_dividas %}
+                    {% for o in ocorrencias_pagar %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Conta periódica</span></td>
+                        <td>{{ o.conta_periodica.descricao }}</td>
+                        <td>{{ o.data_vencimento|date:'d/m/Y' }}</td>
+                        <td>R$ {{ o.valor }}</td>
+                        <td>
+                            <span class="badge
+                                {% if o.status == 'paga' %}bg-success
+                                {% elif o.status == 'atrasada' %}bg-danger
+                                {% elif o.status == 'vencendo_hoje' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ o.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if o.status != 'paga' %}
+                            <a href="{% url 'contas_periodicas:baixa_conta' o.pk %}" class="btn btn-sm btn-outline-success">Baixa</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for p in pagamentos_avulsos %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Pagamento avulso</span></td>
+                        <td>{{ p.descricao }}</td>
+                        <td>{{ p.data_pagamento|date:'d/m/Y' }}</td>
+                        <td>R$ {{ p.valor }}</td>
+                        <td>
+                            <span class="badge
+                                {% if p.status == 'pago' %}bg-success
+                                {% elif p.status == 'atrasado' %}bg-danger
+                                {% elif p.status == 'vencendo_hoje' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ p.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if p.status != 'pago' %}
+                            <a href="{% url 'contas_periodicas:baixa_pagamento_avulso' p.pk %}" class="btn btn-sm btn-outline-success">Baixa</a>
+                            {% endif %}
+                            <a href="{% url 'contas_periodicas:editar_pagamento_avulso' p.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for f in faturas_projecao %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Fatura de cartão</span></td>
+                        <td>
+                            Fatura {{ f.cartao.nome }}
+                            <a href="{% url 'cartoes:detalhe' f.cartao.pk %}?fatura={{ ano }}-{{ mes }}" class="small">ver</a>
+                        </td>
+                        <td>{{ f.data_vencimento|date:'d/m/Y' }}</td>
+                        <td>R$ {{ f.valor }}</td>
+                        <td>
+                            <span class="badge
+                                {% if f.situacao == 'atrasada' %}bg-danger
+                                {% elif f.situacao == 'fechada' %}bg-warning text-dark
+                                {% elif f.situacao == 'em_processamento' %}bg-info text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {% if f.situacao == 'em_processamento' %}Em processamento
+                                {% elif f.situacao == 'fechada' %}Fechada
+                                {% elif f.situacao == 'atrasada' %}Atrasada
+                                {% else %}Futura{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-end"></td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for p in parcelas_dividas %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Dívida</span></td>
+                        <td>
+                            {{ p.divida.descricao }}
+                            <small class="text-muted">(parcela {{ p.numero }}/{{ p.divida.num_parcelas }})</small>
+                        </td>
+                        <td>{{ p.data_vencimento|date:'d/m/Y' }}</td>
+                        <td>R$ {{ p.valor }}</td>
+                        <td><span class="badge bg-secondary">A pagar</span></td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'dividas:pagar_parcela' p.pk %}" class="d-inline"
+                                  data-confirm="Pagar a parcela {{ p.numero }} de &quot;{{ p.divida.descricao }}&quot;?">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{% url 'contas_periodicas:home' %}?mes={{ mes }}&amp;ano={{ ano }}&amp;layout={{ layout }}">
+                                <button class="btn btn-sm btn-success">Pagar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Nada a pagar no mês.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>

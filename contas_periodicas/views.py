@@ -89,11 +89,30 @@ def _contexto_fluxo(ano=None, mes=None):
     }
 
 
+LAYOUTS = {
+    'classico': 'contas_periodicas/fluxo.html',
+    'consolidado': 'contas_periodicas/fluxo_consolidado.html',
+    'abas': 'contas_periodicas/fluxo_abas.html',
+}
+LAYOUT_LABELS = {
+    'classico': 'Clássico (atual)',
+    'consolidado': 'Consolidado',
+    'abas': 'Abas',
+}
+
+
 @login_required
 def home(request):
     processar_ciclos()
+    layout = request.GET.get('layout')
+    if layout in LAYOUTS:
+        request.session['fluxo_layout'] = layout
+    else:
+        layout = request.session.get('fluxo_layout', 'classico')
     contexto = _contexto_fluxo(request.GET.get('ano'), request.GET.get('mes'))
-    return render(request, 'contas_periodicas/fluxo.html', contexto)
+    contexto['layout'] = layout
+    contexto['layout_labels'] = LAYOUT_LABELS
+    return render(request, LAYOUTS[layout], contexto)
 
 
 # ===== Contas periódicas (a pagar) =====

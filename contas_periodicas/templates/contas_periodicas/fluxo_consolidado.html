@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Fluxo de Caixa — Consolidado{% endblock %}
+
+{% block content %}
+{% include 'contas_periodicas/partials/fluxo_toolbar.html' %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <div class="small">A pagar no mês</div>
+                <h3 class="mb-0">R$ {{ projecao.a_pagar|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="small">A receber no mês</div>
+                <h3 class="mb-0">R$ {{ projecao.a_receber|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if projecao.saldo_projetado >= 0 %}text-white bg-primary{% else %}text-white bg-warning{% endif %}">
+            <div class="card-body">
+                <div class="small">Saldo projetado</div>
+                <h3 class="mb-0">R$ {{ projecao.saldo_projetado|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Itens a pagar</div>
+                <h3 class="mb-0">{{ projecao.itens_a_pagar|length }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        {% include 'contas_periodicas/partials/fluxo_tabela_pagar.html' %}
+    </div>
+    <div class="col-lg-6">
+        {% include 'contas_periodicas/partials/fluxo_tabela_receber.html' %}
+    </div>
+</div>
+
+{% include 'contas_periodicas/partials/fluxo_cadastradas.html' %}
+{% endblock %}

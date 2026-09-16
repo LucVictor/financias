@@ -1,0 +1,63 @@
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Todos os recebimentos — {{ mes }}/{{ ano }}</span>
+        <strong class="text-success">Total: R$ {{ projecao.a_receber|floatformat:2 }}</strong>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead>
+                <tr><th>Origem</th><th>Descrição</th><th>Data prevista</th><th>Valor</th><th>Situação</th><th class="text-end"></th></tr>
+            </thead>
+            <tbody>
+                {% if ocorrencias_receber or avulsos %}
+                    {% for o in ocorrencias_receber %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Recebimento</span></td>
+                        <td>{{ o.recebimento_periodico.descricao }}</td>
+                        <td>{{ o.data_prevista|date:'d/m/Y' }}</td>
+                        <td>R$ {{ o.valor }}</td>
+                        <td>
+                            <span class="badge
+                                {% if o.status == 'recebido' %}bg-success
+                                {% elif o.status == 'atrasado' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ o.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if o.status != 'recebido' %}
+                            <a href="{% url 'contas_periodicas:baixa_recebimento' o.pk %}" class="btn btn-sm btn-outline-success">Receber</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for a in avulsos %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Avulso</span></td>
+                        <td>{{ a.descricao }}</td>
+                        <td>{{ a.data_prevista|date:'d/m/Y' }}</td>
+                        <td>R$ {{ a.valor }}</td>
+                        <td>
+                            <span class="badge
+                                {% if a.status == 'recebido' %}bg-success
+                                {% elif a.status == 'atrasado' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ a.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            {% if a.status != 'recebido' %}
+                            <a href="{% url 'contas_periodicas:baixa_avulso' a.pk %}" class="btn btn-sm btn-outline-success">Receber</a>
+                            {% endif %}
+                            <a href="{% url 'contas_periodicas:editar_avulso' a.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted py-4">Nada a receber no mês.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>

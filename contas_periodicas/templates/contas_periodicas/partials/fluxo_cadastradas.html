@@ -1,0 +1,41 @@
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <h5 class="mt-4">Contas periódicas cadastradas</h5>
+        <ul class="list-group">
+            {% for c in contas_periodicas %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ c.descricao }}</strong><br>
+                    <small class="text-muted">{{ c.recorrência|title }} &middot; dia {{ c.dia_do_mes }} &middot; R$ {{ c.valor_esperado }}</small>
+                </div>
+                <div>
+                    <a href="{% url 'contas_periodicas:editar_conta' c.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    <a href="{% url 'contas_periodicas:excluir_conta' c.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Nenhuma conta periódica cadastrada.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="col-lg-6">
+        <h5 class="mt-4">Recebimentos periódicos cadastrados</h5>
+        <ul class="list-group">
+            {% for r in recebimentos_periodicos %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ r.descricao }}</strong><br>
+                    <small class="text-muted">{{ r.recorrência|title }} &middot; dia {{ r.dia_do_mes }} &middot; R$ {{ r.valor_esperado }}</small>
+                </div>
+                <div>
+                    <a href="{% url 'contas_periodicas:editar_recebimento' r.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    <a href="{% url 'contas_periodicas:excluir_recebimento' r.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">Nenhum recebimento periódico cadastrado.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>

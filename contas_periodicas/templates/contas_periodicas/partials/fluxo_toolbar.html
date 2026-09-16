@@ -1,0 +1,34 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="bi bi-calendar-month"></i> Fluxo de Caixa — {{ mes }}/{{ ano }}</h4>
+    <div>
+        <a href="{% url 'contas_periodicas:novo_avulso' %}" class="btn btn-outline-primary btn-sm">Recebimento avulso</a>
+        <a href="{% url 'contas_periodicas:novo_recebimento' %}" class="btn btn-outline-success btn-sm">Recebimento periódico</a>
+        <a href="{% url 'contas_periodicas:nova_conta' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Conta periódica</a>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3 align-items-center">
+    <div class="col-auto">
+        <label class="col-form-label-sm">Mês:</label>
+        <select name="mes" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            {% for p in periodos_mes %}
+            <option value="{{ p.value }}" {% if mes|stringformat:'s' == p.value %}selected{% endif %}>{{ p.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="ano" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            {% for a in anos_disponiveis %}
+            <option value="{{ a }}" {% if ano == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto ms-auto">
+        <label class="col-form-label-sm">Layout:</label>
+        <select name="layout" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+            {% for chave, nome in layout_labels.items %}
+            <option value="{{ chave }}" {% if layout == chave %}selected{% endif %}>{{ nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
