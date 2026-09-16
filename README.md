@@ -30,6 +30,7 @@ gráficos (Chart.js). Histórico automático de patrimônio via snapshot agendad
 | `DJANGO_SECRET_KEY` | **sim** | `django-insecure-fallback` | Chave secreta do Django. Gere com `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
 | `DJANGO_DEBUG` | sim (usar `False`) | `True` | `True`/`False`. Nunca `True` em produção |
 | `DJANGO_ALLOWED_HOSTS` | **sim** | `127.0.0.1,localhost` | Hosts/domínios permitidos, separados por vírgula |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | **sim (com HTTPS/domínio)** | `` | Origens confiáveis para CSRF, **com esquema**, ex.: `https://financeiro.lucascoding.site,https://lucascoding.site` |
 | `DB_ENGINE` | sim (usar `mysql`) | `sqlite` | `mysql` (produção) ou `sqlite` (local) |
 | `DB_NAME` | se `mysql` | `financas` | Nome do banco (deve existir com `utf8mb4`) |
 | `DB_USER` | se `mysql` | `` | Usuário do MySQL |
@@ -132,9 +133,10 @@ docker build -t sistema-financas .
 Ao menos estas devem ser definidas no ambiente dos containers:
 
 ```
-DJANGO_SECRET_KEY=<chave-forte>
+DJANGO_SECRET_KEY=chave-forte
 DJANGO_DEBUG=False
-DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,seus-dominios
+DJANGO_ALLOWED_HOSTS=financeiro.lucascoding.site,lucascoding.site,localhost,127.0.0.1
+DJANGO_CSRF_TRUSTED_ORIGINS=https://financeiro.lucascoding.site,https://lucascoding.site
 DB_ENGINE=mysql
 DB_NAME=financas
 DB_USER=<usuario>

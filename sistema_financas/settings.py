@@ -13,6 +13,15 @@ ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
     if h.strip()
 ]
+# Origens confiaveis para o CSRF (devem incluir o esquema https://)
+# Ex.: https://financeiro.lucascoding.site,https://lucascoding.site
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
+
+# Aplica-se quando rodando atras do proxy HTTPS (Coolify/nginx/Caddy)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ===== Application definition =====
 INSTALLED_APPS = [
