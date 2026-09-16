@@ -2,10 +2,12 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
-from sistema_financas.helpers import success_message
+from sistema_financas.helpers import erro_message, success_message
 from .forms import CriptomoedaForm
 from .models import Criptomoeda
+from .services.crypto_quotes import precificar_auto, precificar_moeda
 
 
 @login_required
@@ -17,7 +19,31 @@ def lista(request):
         'moedas': moedas,
         'total_brl': total_brl,
         'total_usd': total_usd,
+        'possui_auto': moedas.filter(auto_cotacao=True).exists(),
     })
+
+
+@login_required
+@require_POST
+def atualizar(request, pk):
+    moeda = get_object_or_404(Criptomoeda, pk=pk)
+    resultado = precificar_moeda(moeda)
+    if resultado['ok']:
+        success_message(request, resultado['mensagem'])
+    else:
+        erro_message(request, resultado['mensagem'])
+    return redirect(reverse('cripto:lista'))
+
+
+@login_required
+@require_POST
+def atualizar_todas(request):
+    resultado = precificar_auto()
+    if resultado['ok']:
+        success_message(request, resultado['mensagem'])
+    else:
+        erro_message(request, resultado['mensagem'])
+    return redirect(reverse('cripto:lista'))
 
 
 @login_required

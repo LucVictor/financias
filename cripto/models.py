@@ -8,6 +8,15 @@ class Criptomoeda(models.Model):
         ('manual', 'Manual'),
         ('api', 'API'),
     ]
+    FONTE_API_CHOICES = [
+        ('coingecko', 'CoinGecko'),
+        ('binance', 'Binance'),
+        ('cryptocompare', 'CryptoCompare'),
+    ]
+    PAR_COTACAO_CHOICES = [
+        ('USD', 'USD/USDT (converter para BRL)'),
+        ('BRL', 'BRL (par direto em real)'),
+    ]
 
     nome = models.CharField(max_length=200)
     simbolo = models.CharField(max_length=20, unique=True)
@@ -26,6 +35,27 @@ class Criptomoeda(models.Model):
                   'negociado contra BTC (não preencher para o próprio BTC).',
     )
     fonte_cotacao = models.CharField(max_length=10, choices=FONTE_CHOICES, default='manual')
+    auto_cotacao = models.BooleanField(
+        default=False,
+        verbose_name='Precificação automática via API',
+        help_text='Se marcado, a cotação será atualizada automaticamente pela API selecionada.',
+    )
+    fonte_api = models.CharField(
+        max_length=15, choices=FONTE_API_CHOICES, default='coingecko',
+        verbose_name='Fonte da API',
+    )
+    id_api = models.CharField(
+        max_length=64, blank=True, default='',
+        verbose_name='Identificador na fonte',
+        help_text='ID usado pela fonte. Ex.: CoinGecko "bitcoin"/"turbo"; Binance/CryptoCompare '
+                  'símbolo "BTC". Em branco, usa o símbolo da moeda.',
+    )
+    par_cotacao = models.CharField(
+        max_length=3, choices=PAR_COTACAO_CHOICES, default='USD',
+        verbose_name='Par de cotação',
+        help_text='Se a moeda não tiver par direto em real (ex.: TURBOBRL), use USD/USDT — '
+                  'o sistema converte automaticamente para BRL pela taxa de câmbio.',
+    )
     atualizado_em = models.DateTimeField(null=True, blank=True)
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
