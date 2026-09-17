@@ -16,6 +16,7 @@ from contas_periodicas.models import (
 )
 from cripto.models import Criptomoeda, HistoricoCripto
 from dividas.models import Divida, HistoricoDivida, ParcelaDivida
+from planejamento.models import AporteMensal
 from poupanca.models import ContaPoupanca, HistoricoPoupanca
 from renda_fixa.models import AplicacaoCDB, HistoricoCDB
 from renda_fixa.services import calcular_valor_bruto
@@ -128,6 +129,16 @@ def projecao_fluxo_caixa(mes: int | None = None, ano: int | None = None) -> dict
     a_receber += RecebimentoAvulso.objects.filter(
         data_prevista__year=ano, data_prevista__month=mes
     ).exclude(status='recebido').aggregate(t=Sum('valor'))['t'] or Decimal('0')
+
+    # Aportes planejados para objetivos refletidos no fluxo
+    aportes_fluxo = AporteMensal.objects.filter(
+        objetivo__refletir_fluxo=True,
+        objetivo__status__in=['planejamento', 'ativo'],
+        ano=ano, mes=mes,
+    )
+    valor_aportes = sum(a.valor_efetivo for a in aportes_fluxo)
+    a_pagar += valor_aportes
+    infos_pagar_texto += [(f'Objetivo: {a.objetivo.nome}', a.valor_efetivo) for a in aportes_fluxo]
 
     return {
         'mes': mes,

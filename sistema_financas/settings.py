@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'historico.apps.HistoricoConfig',
     'dashboard.apps.DashboardConfig',
     'assistente.apps.AssistenteConfig',
+    'planejamento.apps.PlanejamentoConfig',
 ]
 
 MIDDLEWARE = [

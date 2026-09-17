@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Objetivos Financeiros{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4><i class="bi bi-bullseye"></i> Objetivos Financeiros</h4>
+    <a href="{% url 'planejamento:novo' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg"></i> Novo objetivo
+    </a>
+</div>
+
+{% if dados %}
+<div class="row g-3">
+    {% for item in dados %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">
+                        <a href="{% url 'planejamento:detalhe' item.obj.pk %}" class="text-decoration-none">
+                            {{ item.obj.nome }}
+                        </a>
+                    </h6>
+                    <span class="badge
+                        {% if item.obj.status == 'concluido' %}bg-success
+                        {% elif item.obj.status == 'cancelado' %}bg-danger
+                        {% elif item.obj.status == 'ativo' %}bg-primary
+                        {% else %}bg-secondary{% endif %}">
+                        {{ item.obj.get_status_display }}
+                    </span>
+                </div>
+                {% if item.obj.descricao %}
+                <p class="text-muted small mb-2">{{ item.obj.descricao|truncatechars:80 }}</p>
+                {% endif %}
+                <div class="mb-2">
+                    <small class="text-muted">Meta:</small>
+                    <strong>R$ {{ item.obj.valor_final }}</strong>
+                    {% if item.obj.valor_inicial %}
+                    <br><small class="text-muted">Inicial:</small> R$ {{ item.obj.valor_inicial }}
+                    {% endif %}
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Projetado hoje:</small>
+                    <span class="{% if item.projetado >= item.obj.valor_final %}text-success{% else %}text-primary{% endif %}">
+                        R$ {{ item.projetado|floatformat:2 }}
+                    </span>
+                </div>
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar {% if item.pct >= 100 %}bg-success{% else %}bg-primary{% endif %}"
+                         style="width: {{ item.pct }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">{{ item.pct }}% atingido</small>
+                    <small class="text-muted">{{ item.obj.data_inicio|date:'d/m/Y' }} → {{ item.obj.data_conclusao|date:'d/m/Y' }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-bullseye display-4"></i>
+        <p class="mt-3">Nenhum objetivo financeiro cadastrado.</p>
+        <a href="{% url 'planejamento:novo' %}" class="btn btn-primary">Criar primeiro objetivo</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

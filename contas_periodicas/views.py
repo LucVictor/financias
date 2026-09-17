@@ -7,6 +7,7 @@ from contas.models import Movimentacao
 from cartoes.services import previsao_faturas_fluxo
 from dashboard.services import projecao_fluxo_caixa
 from dividas.models import ParcelaDivida
+from planejamento.models import AporteMensal
 from sistema_financas.helpers import erro_message, success_message
 from .forms import (
     BaixaContaForm,
@@ -60,6 +61,11 @@ def _contexto_fluxo(ano=None, mes=None):
         .order_by('data_pagamento')
     )
     faturas_projecao = previsao_faturas_fluxo(ano, mes)
+    aportes_planejados = AporteMensal.objects.filter(
+        objetivo__refletir_fluxo=True,
+        objetivo__status__in=['planejamento', 'ativo'],
+        ano=ano, mes=mes,
+    ).select_related('objetivo')
     parcelas_dividas = (
         ParcelaDivida.objects
         .filter(
@@ -86,6 +92,7 @@ def _contexto_fluxo(ano=None, mes=None):
         'avulsos': avulsos,
         'faturas_projecao': faturas_projecao,
         'parcelas_dividas': parcelas_dividas,
+        'aportes_planejados': aportes_planejados,
     }
 
 

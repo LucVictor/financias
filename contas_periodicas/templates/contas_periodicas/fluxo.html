@@ -164,6 +164,36 @@
             </div>
         </div>
         {% endif %}
+
+        {% if aportes_planejados %}
+        <h5 class="mt-4"><i class="bi bi-bullseye"></i> Objetivos financeiros</h5>
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Objetivo</th><th>Mês</th><th>Valor</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in aportes_planejados %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border">objetivo</span>
+                                <a href="{% url 'planejamento:detalhe' a.objetivo.pk %}">{{ a.objetivo.nome }}</a>
+                            </td>
+                            <td>{{ a.mes|floatformat:0 }}/{{ a.ano }}</td>
+                            <td>R$ {{ a.valor_efetivo|floatformat:2 }}</td>
+                            <td>
+                                {% if a.descricao %}
+                                <small class="text-muted">{{ a.descricao }}</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <div class="col-lg-6">

@@ -9,7 +9,7 @@
                 <tr><th>Origem</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Situação</th><th class="text-end"></th></tr>
             </thead>
             <tbody>
-                {% if ocorrencias_pagar or pagamentos_avulsos or faturas_projecao or parcelas_dividas %}
+                {% if ocorrencias_pagar or pagamentos_avulsos or faturas_projecao or parcelas_dividas or aportes_planejados %}
                     {% for o in ocorrencias_pagar %}
                     <tr>
                         <td><span class="badge bg-light text-dark border">Conta periódica</span></td>
@@ -100,6 +100,22 @@
                                 <button class="btn btn-sm btn-success">Pagar</button>
                             </form>
                         </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for a in aportes_planejados %}
+                    <tr>
+                        <td><span class="badge bg-light text-dark border">Objetivo</span></td>
+                        <td>
+                            <a href="{% url 'planejamento:detalhe' a.objetivo.pk %}">{{ a.objetivo.nome }}</a>
+                            {% if a.descricao %}
+                            <small class="text-muted">— {{ a.descricao }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ a.mes|floatformat:0 }}/{{ a.ano }}</td>
+                        <td>R$ {{ a.valor_efetivo|floatformat:2 }}</td>
+                        <td><span class="badge bg-info text-dark">Aporte</span></td>
+                        <td class="text-end"></td>
                     </tr>
                     {% endfor %}
                 {% else %}

@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block title %}{{ objetivo.nome }} — Planejamento{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a href="{% url 'planejamento:lista' %}" class="text-muted text-decoration-none">
+            <i class="bi bi-arrow-left"></i> Objetivos
+        </a>
+        <h4 class="mt-1 mb-0">{{ objetivo.nome }}</h4>
+        {% if objetivo.descricao %}
+        <small class="text-muted">{{ objetivo.descricao }}</small>
+        {% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'planejamento:editar' objetivo.pk %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        {% if objetivo.status != 'concluido' and objetivo.status != 'cancelado' %}
+        <form method="post" action="{% url 'planejamento:excluir' objetivo.pk %}" class="d-inline"
+              data-confirm="Excluir o objetivo &quot;{{ objetivo.nome }}&quot;? Esta ação não pode ser desfeita.">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-trash"></i> Excluir
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="small">Meta</div>
+                <h3 class="mb-0">R$ {{ objetivo.valor_final }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white {% if projetado >= objetivo.valor_final %}bg-success{% else %}bg-info{% endif %}">
+            <div class="card-body">
+                <div class="small">Projetado hoje</div>
+                <h3 class="mb-0">R$ {{ projetado|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Aporte mensal</div>
+                <h3 class="mb-0">R$ {{ pmt|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="small text-muted">Rendimento</div>
+                <h3 class="mb-0">{{ objetivo.taxa_rendimento_pct }}% a.m.</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col">
+        <div class="d-flex gap-2">
+            {% if objetivo.status == 'planejamento' %}
+            <form method="post" action="{% url 'planejamento:alternar_fluxo' objetivo.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left-right"></i> Refletir no fluxo de caixa
+                </button>
+            </form>
+            {% elif objetivo.status == 'ativo' %}
+            <form method="post" action="{% url 'planejamento:alternar_fluxo' objetivo.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-warning btn-sm">
+                    <i class="bi bi-arrow-left-right"></i> Remover do fluxo
+                </button>
+            </form>
+            <form method="post" action="{% url 'planejamento:concluir' objetivo.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-success btn-sm" data-confirm="Marcar como concluído?">
+                    <i class="bi bi-check-lg"></i> Concluir
+                </button>
+            </form>
+            {% elif objetivo.status == 'concluido' %}
+            <span class="badge bg-success fs-6">Concluído</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-bar-chart-line"></i> Linha do tempo — aportes, rendimentos e saldo</h6>
+    </div>
+    <div class="card-body">
+        <canvas id="graficoObjetivo" height="130"></canvas>
+        <div class="d-flex flex-wrap gap-3 mt-3 small">
+            <span><span class="badge bg-success">&nbsp;</span> Aportes realizados</span>
+            <span><span class="badge bg-primary">&nbsp;</span> Aportes restantes (planejados)</span>
+            <span><span class="badge bg-warning">&nbsp;</span> Rendimento mensal</span>
+            <span><span class="badge" style="background:#198754">&nbsp;</span> Saldo acumulado</span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="bi bi-table"></i> Simulação mês a mês</h6>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mês</th>
+                    <th class="text-end">Saldo início</th>
+                    <th class="text-end">Rendimento</th>
+                    <th class="text-end">Aporte</th>
+                    <th class="text-end">Saldo final</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in tabela %}
+                <tr class="{% if l.passado %}table-active{% endif %}">
+                    <td>
+                        {{ l.mes|floatformat:0 }}/{{ l.ano }}
+                        {% if l.descricao %}
+                        <br><small class="text-muted">{{ l.descricao }}</small>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">R$ {{ l.saldo_inicio|floatformat:2 }}</td>
+                    <td class="text-end text-success">+ R$ {{ l.rendimento|floatformat:2 }}</td>
+                    <td class="text-end">
+                        {% if l.realizado %}
+                        <span class="text-primary fw-bold">R$ {{ l.aporte|floatformat:2 }}</span>
+                        {% elif l.manual %}
+                        <span class="text-warning">R$ {{ l.aporte|floatformat:2 }}</span>
+                        {% else %}
+                        R$ {{ l.aporte|floatformat:2 }}
+                        {% endif %}
+                    </td>
+                    <td class="text-end fw-bold">R$ {{ l.saldo_final|floatformat:2 }}</td>
+                    <td>
+                        {% if l.realizado %}
+                        <span class="badge bg-success">Realizado</span>
+                        {% elif l.manual %}
+                        <span class="badge bg-warning text-dark">Manual</span>
+                        {% elif l.passado %}
+                        <span class="badge bg-secondary">Passado</span>
+                        {% else %}
+                        <span class="badge bg-info text-dark">Planejado</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if not l.passado and l.aporte_obj %}
+                        <button class="btn btn-sm btn-outline-secondary" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#editar-{{ l.ano }}-{{ l.mes }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if not l.passado and l.aporte_obj %}
+                <tr class="collapse" id="editar-{{ l.ano }}-{{ l.mes }}">
+                    <td colspan="7" class="bg-light">
+                        <form method="post" action="{% url 'planejamento:editar_aporte' objetivo.pk l.aporte_obj.pk %}" class="row g-2 align-items-end">
+                            {% csrf_token %}
+                            <input type="hidden" name="ano" value="{{ l.ano }}">
+                            <input type="hidden" name="mes" value="{{ l.mes }}">
+                            <div class="col-auto">
+                                <label class="form-label small">Valor planejado</label>
+                                <input type="number" step="0.01" min="0" name="valor" value="{{ l.aporte }}"
+                                       class="form-control form-control-sm" style="width:140px">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small">Descrição</label>
+                                <input type="text" name="descricao" value="{{ l.descricao }}"
+                                       class="form-control form-control-sm" style="width:200px" placeholder="Ex: adiantamento">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                            </div>
+                        </form>
+                        {% if not l.realizado %}
+                        <hr class="my-2">
+                        <form method="post" action="{% url 'planejamento:realizar_aporte' objetivo.pk %}" class="row g-2 align-items-end">
+                            {% csrf_token %}
+                            <input type="hidden" name="ano" value="{{ l.ano }}">
+                            <input type="hidden" name="mes" value="{{ l.mes }}">
+                            <div class="col-auto">
+                                <label class="form-label small">Valor realizado</label>
+                                <input type="number" step="0.01" min="0" name="valor"
+                                       class="form-control form-control-sm" style="width:140px"
+                                       placeholder="Valor efetivamente aportado">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small">Descrição</label>
+                                <input type="text" name="descricao"
+                                       class="form-control form-control-sm" style="width:200px" placeholder="Ex: aporte extra">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-sm btn-success"
+                                        data-confirm="Registrar aporte realizado em {{ l.mes }}/{{ l.ano }}? Os aportes futuros serão recalculados.">
+                                    <i class="bi bi-check2-circle"></i> Registrar
+                                </button>
+                            </div>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <td colspan="3" class="fw-bold">Total investido</td>
+                    <td class="text-end fw-bold">R$ {{ total_realizado|floatformat:2 }}</td>
+                    <td colspan="3"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+const gObjetivo = {
+    rotulos: {{ grafico.rotulos|safe }},
+    realizados: {{ grafico.realizados|safe }},
+    restantes: {{ grafico.restantes|safe }},
+    rendimentos: {{ grafico.rendimentos|safe }},
+    saldos: {{ grafico.saldos|safe }}
+};
+
+new Chart(document.getElementById('graficoObjetivo'), {
+    type: 'bar',
+    data: {
+        labels: gObjetivo.rotulos,
+        datasets: [
+            { type: 'bar', label: 'Aportes realizados', data: gObjetivo.realizados, backgroundColor: '#198754' },
+            { type: 'bar', label: 'Aportes restantes (planejados)', data: gObjetivo.restantes, backgroundColor: '#0d6efd' },
+            { type: 'line', label: 'Rendimento mensal', data: gObjetivo.rendimentos, borderColor: '#ffc107', backgroundColor: '#ffc107', tension: 0.3, yAxisID: 'yValores' },
+            { type: 'line', label: 'Saldo acumulado', data: gObjetivo.saldos, borderColor: '#6f42c1', backgroundColor: 'rgba(111,66,193,0.1)', fill: true, tension: 0.3, yAxisID: 'ySaldo' }
+        ]
+    },
+    options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+            yValores: {
+                position: 'left',
+                title: { display: true, text: 'Aportes / Rendimento (R$)' },
+                stacked: true
+            },
+            ySaldo: {
+                position: 'right',
+                title: { display: true, text: 'Saldo acumulado (R$)' },
+                grid: { drawOnChartArea: false },
+                stacked: false
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: ctx => `${ctx.dataset.label}: R$ ${Number(ctx.raw).toFixed(2)}`
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
