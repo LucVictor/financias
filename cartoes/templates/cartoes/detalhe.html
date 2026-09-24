@@ -65,6 +65,48 @@
 </div>
 
 {% if compras_mes %}
+<h5>Compras da fatura {{ fatura_selecionada }}</h5>
+<div class="card mb-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Compra</th>
+                    <th>Categoria</th>
+                    <th>Parcelas</th>
+                    <th>Status</th>
+                    <th class="text-end">Valor total</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in compras_da_fatura %}
+                <tr>
+                    <td>
+                        {{ item.compra.descricao }}
+                        {% if item.compra.estabelecimento %}
+                        <small class="text-muted d-block">{{ item.compra.estabelecimento }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.compra.categoria|default:'—' }}</td>
+                    <td>{{ item.compra.get_forma_pagamento_display }} · {{ item.compra.num_parcelas }}x</td>
+                    <td>
+                        <span class="badge {% if item.paga %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {% if item.paga %}Paga{% else %}Em aberto{% endif %}
+                        </span>
+                    </td>
+                    <td class="text-end">R$ {{ item.compra.valor_total }}</td>
+                    <td class="text-end text-nowrap">
+                        <a href="{% url 'cartoes:editar_compra' item.compra.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        <a href="{% url 'cartoes:excluir_compra' item.compra.pk %}" class="btn btn-sm btn-outline-danger">Excluir</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <h5>Parcelas da fatura {{ fatura_selecionada }}</h5>
 <div class="card mb-4">
     <div class="table-responsive">

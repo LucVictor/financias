@@ -135,6 +135,38 @@ class CompraCartao(models.Model):
         # Recalcula limites/histórico do cartão
         self.cartao.save()
 
+    def regerar_parcelas(self):
+        """Regenera as parcelas após uma edição da compra, preservando o
+        status 'paga' das parcelas antigas que mantêm o mesmo número.
+
+        Retorna os meses (ano, mes) impactados para ressincronizar as faturas.
+        """
+        antigas = list(self.parcelas.all())
+        pagas = {p.numero_parcela for p in antigas if p.status == 'paga'}
+        meses_impactados = {(p.ano, p.mes) for p in antigas}
+        self.parcelas.all().delete()
+        ano, mes = self._mes_fatura(self.data_compra)
+        for i in range(self.num_parcelas):
+            numero = i + 1
+            if numero in pagas:
+                status = 'paga'
+            else:
+                status = 'fatura_atual' if i == 0 else 'a_vencer'
+            ParcelaCompra.objects.create(
+                compra=self,
+                numero_parcela=numero,
+                valor=self.valor_parcela,
+                ano=ano,
+                mes=mes,
+                status=status,
+            )
+            meses_impactados.add((ano, mes))
+            mes += 1
+            if mes > 12:
+                mes = 1
+                ano += 1
+        return meses_impactados
+
 
 class ParcelaCompra(models.Model):
     STATUS_CHOICES = [

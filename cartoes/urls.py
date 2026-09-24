@@ -12,5 +12,7 @@ urlpatterns = [
     path('<int:pk>/excluir/', views.excluir, name='excluir'),
     path('<int:cartao_pk>/compras/nova/', views.nova_compra, name='nova_compra'),
     path('compras/nova/', views.nova_compra, name='nova_compra_sem_cartao'),
+    path('compras/<int:pk>/editar/', views.editar_compra, name='editar_compra'),
+    path('compras/<int:pk>/excluir/', views.excluir_compra, name='excluir_compra'),
     path('faturas/<int:pk>/pagar/', views.pagar_fatura, name='pagar_fatura'),
 ]
