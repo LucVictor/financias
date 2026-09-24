@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 
 from contas.models import Banco
@@ -58,7 +60,7 @@ class BaixaContaForm(BootstrapFormMixin, forms.Form):
         required=False,
     )
     data_efetiva = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
-    valor = forms.DecimalField(max_digits=15, decimal_places=2)
+    valor = forms.DecimalField(max_digits=15, decimal_places=2, min_value=Decimal('0.01'))
 
 
 class BaixaRecebimentoForm(BootstrapFormMixin, forms.Form):

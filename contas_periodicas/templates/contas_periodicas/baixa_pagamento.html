@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}{{ titulo }} — Finanças Pessoais{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="bi {{ icone|default:'bi-check2-circle' }}"></i> {{ titulo }}</h4>
+            <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                {% if divergencia %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    O valor pago difere do valor cadastrado.<br>
+                    Valor cadastrado: <strong>R$ {{ valor_cadastrado|floatformat:2 }}</strong> ·
+                    Valor informado: <strong>R$ {{ form.valor.value|floatformat:2 }}</strong> ·<br>
+                    Restante: <strong>R$ {{ valor_restante|floatformat:2 }}</strong>.
+                    Escolha abaixo como deseja registrar o pagamento.
+                </div>
+                {% endif %}
+                <form method="post" {% if confirm_submit %}data-confirm="{{ confirm_submit }}"{% endif %}>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label" for="{{ field.id_for_label }}">
+                            {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="text-danger small">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if divergencia %}
+                        <button type="submit" name="decisao" value="restante_pendente" class="btn btn-primary">
+                            <i class="bi bi-arrow-repeat"></i> Considerar restante como não pago (lançar novo pagamento)
+                        </button>
+                        <button type="submit" name="decisao" value="encerrar" class="btn btn-outline-primary">
+                            <i class="bi bi-check-lg"></i> Encerrar conta com o valor pago
+                        </button>
+                        {% else %}
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> {{ submit_label|default:'Salvar' }}
+                        </button>
+                        {% endif %}
+                        <a href="{{ back_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

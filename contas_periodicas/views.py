@@ -190,6 +190,19 @@ def dar_baixa_conta(request, pk):
     })
     if request.method == 'POST' and form.is_valid():
         dados = form.cleaned_data
+        decisao = request.POST.get('decisao')
+        divergencia = 0 < dados['valor'] < ocorrencia.valor
+        if divergencia and not decisao:
+            return render(request, 'contas_periodicas/baixa_pagamento.html', {
+                'titulo': f'Dar baixa: {ocorrencia.conta_periodica.descricao} ({ocorrencia.data_vencimento:%d/%m/%Y})',
+                'form': form,
+                'back_url': reverse('contas_periodicas:home'),
+                'icone': 'bi-check2-circle',
+                'divergencia': True,
+                'valor_cadastrado': ocorrencia.valor,
+                'valor_restante': ocorrencia.valor - dados['valor'],
+            })
+
         mov = None
         if dados['meio'] == 'conta' and dados['conta']:
             mov = Movimentacao.objects.create(
@@ -202,20 +215,40 @@ def dar_baixa_conta(request, pk):
             )
         elif dados['meio'] == 'cartao' and ocorrencia.conta_periodica.cartao_pagamento_padrao:
             pass  # pago no cartão: não impacta conta bancária
+
+        if decisao == 'restante_pendente':
+            restante = ocorrencia.valor - dados['valor']
+            PagamentoAvulso.objects.create(
+                descricao=f'{ocorrencia.conta_periodica.descricao} (restante venc. {ocorrencia.data_vencimento:%d/%m/%Y})',
+                valor=restante,
+                data_pagamento=dados['data_efetiva'],
+                observacoes=f'Restante de R$ {restante} da ocorrência vencida em {ocorrencia.data_vencimento:%d/%m/%Y}.',
+            )
+            success_message(
+                request,
+                f'Baixa parcial registrada. Restante de R$ {restante} lançado como novo pagamento.',
+            )
+        elif decisao == 'encerrar':
+            success_message(request, 'Baixa registrada. Conta encerrada com o valor pago.')
+        else:
+            success_message(request, 'Baixa registrada. Saldo da conta atualizado.')
+
         ocorrencia.status = 'paga'
         ocorrencia.data_pagamento = dados['data_efetiva']
         ocorrencia.valor_pago = dados['valor']
         ocorrencia.movimentacao = mov
         ocorrencia.save()
-        success_message(request, 'Baixa registrada. Saldo da conta atualizado.')
         return redirect(reverse('contas_periodicas:home'))
-    return render(request, 'generic_form.html', {
+    return render(request, 'contas_periodicas/baixa_pagamento.html', {
         'titulo': f'Dar baixa: {ocorrencia.conta_periodica.descricao} ({ocorrencia.data_vencimento:%d/%m/%Y})',
         'form': form,
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-check2-circle',
         'submit_label': 'Confirmar baixa',
         'confirm_submit': f'Confirmar pagamento de "{ocorrencia.conta_periodica.descricao}"?',
+        'divergencia': False,
+        'valor_cadastrado': ocorrencia.valor,
+        'valor_restante': None,
     })
 
 
@@ -276,6 +309,19 @@ def dar_baixa_pagamento_avulso(request, pk):
     })
     if request.method == 'POST' and form.is_valid():
         dados = form.cleaned_data
+        decisao = request.POST.get('decisao')
+        divergencia = 0 < dados['valor'] < avulso.valor
+        if divergencia and not decisao:
+            return render(request, 'contas_periodicas/baixa_pagamento.html', {
+                'titulo': f'Dar baixa: {avulso.descricao}',
+                'form': form,
+                'back_url': reverse('contas_periodicas:home'),
+                'icone': 'bi-check2-circle',
+                'divergencia': True,
+                'valor_cadastrado': avulso.valor,
+                'valor_restante': avulso.valor - dados['valor'],
+            })
+
         mov = None
         if dados['meio'] == 'conta' and dados['conta']:
             mov = Movimentacao.objects.create(
@@ -285,20 +331,39 @@ def dar_baixa_pagamento_avulso(request, pk):
                 data=dados['data_efetiva'],
                 tipo='saida',
             )
+        if decisao == 'restante_pendente':
+            restante = avulso.valor - dados['valor']
+            PagamentoAvulso.objects.create(
+                descricao=f'{avulso.descricao} (restante)',
+                valor=restante,
+                data_pagamento=dados['data_efetiva'],
+                observacoes=f'Restante de R$ {restante} do pagamento avulso "{avulso.descricao}".',
+            )
+            success_message(
+                request,
+                f'Baixa parcial registrada. Restante de R$ {restante} lançado como novo pagamento.',
+            )
+        elif decisao == 'encerrar':
+            success_message(request, 'Baixa registrada. Pagamento encerrado com o valor pago.')
+        else:
+            success_message(request, 'Baixa registrada. Saldo da conta atualizado.')
+
         avulso.status = 'pago'
         avulso.data_efetiva_pagamento = dados['data_efetiva']
         avulso.valor_pago = dados['valor']
         avulso.movimentacao = mov
         avulso.save()
-        success_message(request, 'Baixa registrada. Saldo da conta atualizado.')
         return redirect(reverse('contas_periodicas:home'))
-    return render(request, 'generic_form.html', {
+    return render(request, 'contas_periodicas/baixa_pagamento.html', {
         'titulo': f'Dar baixa: {avulso.descricao}',
         'form': form,
         'back_url': reverse('contas_periodicas:home'),
         'icone': 'bi-check2-circle',
         'submit_label': 'Confirmar baixa',
         'confirm_submit': f'Confirmar pagamento de "{avulso.descricao}"?',
+        'divergencia': False,
+        'valor_cadastrado': avulso.valor,
+        'valor_restante': None,
     })
 
 
